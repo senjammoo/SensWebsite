@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sen's Homepage</title>
+  <title>Seneca Moore — IML300</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <style>
     :root {
       --cream: #f5f0e8;
@@ -18,11 +19,8 @@
       --muted: #8a7560;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       background-color: var(--warm-white);
@@ -30,89 +28,221 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: 18px;
       line-height: 1.75;
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 80px 32px 120px;
     }
 
-    /* subtle grain overlay */
+    #p5-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    #p5-bg canvas { display: block; }
+
     body::before {
       content: '';
       position: fixed;
       inset: 0;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
       pointer-events: none;
-      z-index: 0;
+      z-index: 1;
       opacity: 0.6;
     }
 
-    main { position: relative; z-index: 1; }
-
-    /* ── header ── */
-    header {
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250, 247, 242, 0.88);
+      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--dust);
-      padding-bottom: 40px;
-      margin-bottom: 64px;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    header h1 {
-      font-size: 3.2rem;
+    .nav-brand {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--brown);
+      text-decoration: none;
+      border: 1px solid var(--dust);
+      padding: 6px 16px;
+      border-radius: 2px;
+      transition: all 0.25s ease;
+      display: inline-block;
+    }
+
+    .nav-links a:hover {
+      background: var(--rose);
+      border-color: var(--rose);
+      color: var(--warm-white);
+      transform: scale(1.08);
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 32px 120px;
+    }
+
+    #about {
+      padding: 96px 0 72px;
+      border-bottom: 1px solid var(--dust);
+    }
+
+    #about h1 {
+      font-size: 4.4rem;
       font-weight: 600;
-      letter-spacing: -0.5px;
-      line-height: 1.1;
-      margin-bottom: 16px;
+      letter-spacing: -1.5px;
+      line-height: 1.0;
+      margin-bottom: 24px;
     }
 
-    header p {
+    #about .bio {
       color: var(--muted);
       font-style: italic;
       font-size: 1.05rem;
+      line-height: 1.85;
+      max-width: 540px;
+      margin-bottom: 24px;
     }
 
-    /* ── sections ── */
-    section {
-      margin-bottom: 56px;
+    .about-meta {
+      display: flex;
+      gap: 20px;
     }
 
-    h2 {
+    .about-meta span {
       font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dust);
+    }
+
+    h2.section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
       font-weight: 400;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--rose);
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
+
+    section { padding: 64px 0 0; }
 
     h3 {
       font-size: 1.1rem;
       font-weight: 600;
       margin-bottom: 4px;
-      margin-top: 24px;
+      margin-top: 28px;
     }
 
-    /* ── links ── */
-    a {
+    a.project-link {
       color: var(--brown);
       text-decoration: none;
       border-bottom: 1px solid var(--dust);
-      transition: border-color 0.2s, color 0.2s;
+      transition: color 0.2s, border-color 0.2s;
     }
 
-    a:hover {
+    a.project-link:hover {
       color: var(--rose);
       border-color: var(--rose);
     }
 
-    /* ── project description ── */
     .project-desc {
       color: var(--muted);
       font-size: 0.95rem;
       margin-top: 8px;
       max-width: 600px;
+      line-height: 1.75;
     }
 
-    /* ── exercises grid ── */
+    /* ── PRESENTATION CARD ── */
+    .pres-card {
+      display: block;
+      text-decoration: none;
+      border: 1px solid var(--dust);
+      border-radius: 4px;
+      padding: 48px 40px;
+      background: var(--cream);
+      transition: all 0.3s ease;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pres-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(196,149,122,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .pres-card:hover {
+      border-color: var(--rose);
+      transform: scale(1.015);
+      box-shadow: 0 8px 32px rgba(59,42,26,0.08);
+    }
+
+    .pres-card-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pres-card-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--rose);
+    }
+
+    .pres-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--brown);
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+
+    .pres-card-cta {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 8px;
+      transition: color 0.2s;
+    }
+
+    .pres-card:hover .pres-card-cta {
+      color: var(--rose);
+    }
+
     .exercises {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -124,13 +254,20 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      transition: transform 0.25s ease;
     }
 
-    .exercise-item span {
-      font-size: 0.85rem;
-      color: var(--muted);
-      font-style: italic;
+    .exercise-item:hover { transform: scale(1.03); }
+
+    .exercise-item a {
+      color: var(--brown);
+      text-decoration: none;
+      border-bottom: 1px solid var(--dust);
+      font-size: 0.9rem;
+      transition: color 0.2s, border-color 0.2s;
     }
+
+    .exercise-item a:hover { color: var(--rose); border-color: var(--rose); }
 
     .exercise-item iframe {
       width: 100%;
@@ -140,115 +277,229 @@
       background: var(--cream);
     }
 
-    /* ── vibe coding thumbnail ── */
-    .vibe-card {
-      margin-top: 16px;
-      border: 1px solid var(--dust);
+    .vibe-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .vibe-placeholder {
+      border: 1px dashed var(--dust);
       border-radius: 4px;
-      overflow: hidden;
-      max-width: 320px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .vibe-card iframe {
-      width: 100%;
-      height: 200px;
-      border: none;
-      display: block;
+    .vibe-placeholder span {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dust);
     }
 
-    .vibe-card-label {
-      padding: 10px 14px;
-      font-size: 0.85rem;
-      color: var(--muted);
-      background: var(--cream);
-    }
-
-    /* ── footer ── */
     footer {
       margin-top: 80px;
       padding-top: 32px;
       border-top: 1px solid var(--dust);
       font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--muted);
+      font-size: 0.68rem;
+      color: var(--dust);
       letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+    }
+
+    @media (max-width: 600px) {
+      #about h1 { font-size: 2.8rem; }
+      nav { padding: 14px 20px; }
+      .nav-brand { display: none; }
+      .exercises, .vibe-grid { grid-template-columns: 1fr; }
+      .about-meta { flex-direction: column; gap: 6px; }
     }
   </style>
 </head>
 <body>
-<main>
 
-  <header>
-    <h1>Sen's Coded Reality</h1>
-    <p>This is my website for <em>IML300</em>. Creative · Authentic · Innovative · Revolutionary.</p>
-  </header>
+  <div id="p5-bg"></div>
 
-  <!-- PRESENTATION -->
-  <section>
-    <h2>Presentation</h2>
-    <a href="https://canva.link/fyhfcz4txk0dnk0" target="_blank">Pecha Kucha: Alt Code as Poetry ↗</a>
-  </section>
+  <nav>
+    <span class="nav-brand">IML-300 — Seneca Moore</span>
+    <ul class="nav-links">
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#exercises">Exercises</a></li>
+      <li><a href="#presentation">Presentation</a></li>
+      <li><a href="#vibe">Vibe Code</a></li>
+    </ul>
+  </nav>
 
-  <!-- PROJECTS -->
-  <section>
-    <h2>Projects</h2>
+  <main>
 
-    <h3>Project 1 — Interactive Audio & Visual with p5.js</h3>
-    <a href="https://editor.p5js.org/sjm/full/6gKSn1rez" target="_blank">Final: Sen Stu ↗</a>
-    <p class="project-desc">A simple interactive audio studio. Clicking on each image plays its corresponding sound. This piece uses images and audio to create an interactive experience rooted in everyday sensory cues.</p>
-
-    <h3>Project 2 — HyperNarrative</h3>
-    <a href="https://senjammoo.github.io/iml3000/index.html" target="_blank">Final: POLARIS ↗</a>
-    <p class="project-desc">POLARIS is a personal web narrative about finding your way through a dark moment. My freshman year, me and my friends were racially profiled and accused of a student conduct violation over a nerf gun — weapons charges, academic probation, a flag on our records. POLARIS walks through that journey in four chapters: Darkness, Distance, Light, and Return. Designed to feel like drifting through space, slowly finding your north star. Community got me through it. This project is my way of turning that into something people can actually feel.</p>
-
-    <h3>Project 3 — Networked Care</h3>
-    <a href="" target="_blank">Final: Coming Soon</a>
-  </section>
-
-  <!-- EXERCISES -->
-  <section>
-    <h2>Exercises</h2>
-    <div class="exercises">
-
-      <div class="exercise-item">
-        <a href="https://editor.p5js.org/sjm/full/YtnEMuXNK" target="_blank">Exercise 1 ↗</a>
-        <iframe src="https://editor.p5js.org/sjm/embed/YtnEMuXNK?autoplay=1" title="Exercise 1" loading="lazy"></iframe>
+    <section id="about">
+      <h1>Sen's<br>Coded Reality</h1>
+      <p class="bio">
+        I use p5.js, HTML/CSS, and sound to build small interactive pieces
+        that sit between physical and digital life. This page gathers all of my
+        IML300 work: one Pecha Kucha presentation, three main projects, weekly
+        p5.js exercises, and ten in-class vibe coding sessions. Hope you enjoy
+        my work.
+      </p>
+      <div class="about-meta">
+        <span>Los Angeles, CA</span>
+        <span>University of Southern California</span>
+        <span>Spring 2026</span>
       </div>
+    </section>
 
-      <div class="exercise-item">
-        <a href="https://editor.p5js.org/sjm/full/UCVQdEqkU" target="_blank">Exercise 2 ↗</a>
-        <iframe src="https://editor.p5js.org/sjm/embed/UCVQdEqkU?autoplay=1" title="Exercise 2" loading="lazy"></iframe>
+    <section id="presentation">
+      <h2 class="section-label">Presentation</h2>
+      <a class="pres-card" href="https://canva.link/fhzodzefeiv6y9q" target="_blank" rel="noopener">
+        <div class="pres-card-inner">
+          <span class="pres-card-label">Pecha Kucha Presentation</span>
+          <span class="pres-card-title">Alt Code as Poetry</span>
+          <span class="pres-card-cta">View on Canva ↗</span>
+        </div>
+      </a>
+    </section>
+
+    <section id="projects">
+      <h2 class="section-label">Projects</h2>
+
+      <h3>Project 1 — Interactive Audio &amp; Visual with p5.js</h3>
+      <a class="project-link" href="https://editor.p5js.org/sjm/full/6gKSn1rez" target="_blank">Final: Sen Stu ↗</a>
+      <p class="project-desc">A simple interactive audio studio. Clicking on each image plays its corresponding sound. This piece uses images and audio to create an interactive experience rooted in everyday sensory cues.</p>
+
+      <h3>Project 2 — HyperNarrative</h3>
+      <a class="project-link" href="https://senjammoo.github.io/iml3000/index.html" target="_blank">Final: POLARIS ↗</a>
+      <p class="project-desc">POLARIS is a personal web narrative about finding your way through a dark moment. My freshman year, me and my friends were racially profiled and accused of a student conduct violation over a nerf gun — weapons charges, academic probation, a flag on our records. POLARIS walks through that journey in four chapters: Darkness, Distance, Light, and Return. Designed to feel like drifting through space, slowly finding your north star. Community got me through it. This project is my way of turning that into something people can actually feel.</p>
+
+      <h3>Project 3 — Networked Care</h3>
+      <a class="project-link" href="" target="_blank">Final: Coming Soon</a>
+      <p class="project-desc">In progress — check back soon.</p>
+    </section>
+
+    <section id="exercises">
+      <h2 class="section-label">Exercises</h2>
+      <div class="exercises">
+
+        <div class="exercise-item">
+          <a href="https://editor.p5js.org/sjm/full/YtnEMuXNK" target="_blank">Exercise 1 ↗</a>
+          <iframe src="https://editor.p5js.org/sjm/embed/YtnEMuXNK?autoplay=1" title="Exercise 1" loading="lazy"></iframe>
+        </div>
+
+        <div class="exercise-item">
+          <a href="https://editor.p5js.org/sjm/full/UCVQdEqkU" target="_blank">Exercise 2 ↗</a>
+          <iframe src="https://editor.p5js.org/sjm/embed/UCVQdEqkU?autoplay=1" title="Exercise 2" loading="lazy"></iframe>
+        </div>
+
+        <div class="exercise-item">
+          <a href="https://editor.p5js.org/sjm/full/MXu47kQ5z" target="_blank">Exercise 3 ↗</a>
+          <iframe src="https://editor.p5js.org/sjm/embed/MXu47kQ5z?autoplay=1" title="Exercise 3" loading="lazy"></iframe>
+        </div>
+
+        <div class="exercise-item">
+          <a href="https://editor.p5js.org/sjm/full/PcA2eixI4" target="_blank">Exercise 4 ↗</a>
+          <iframe src="https://editor.p5js.org/sjm/embed/PcA2eixI4?autoplay=1" title="Exercise 4" loading="lazy"></iframe>
+        </div>
+
+        <div class="exercise-item">
+          <a href="https://editor.p5js.org/sjm/full/eWtgEyQKA" target="_blank">Exercise 5 ↗</a>
+          <iframe src="https://editor.p5js.org/sjm/embed/eWtgEyQKA?autoplay=1" title="Exercise 5" loading="lazy"></iframe>
+        </div>
+
+        <div class="exercise-item">
+          <a href="https://editor.p5js.org/sjm/full/b6GZlUoSO" target="_blank">Video Game WOTM ↗</a>
+          <iframe src="https://editor.p5js.org/sjm/embed/b6GZlUoSO?autoplay=1" title="Video Game WOTM" loading="lazy"></iframe>
+        </div>
+
       </div>
+    </section>
 
-      <div class="exercise-item">
-        <a href="https://editor.p5js.org/sjm/full/MXu47kQ5z" target="_blank">Exercise 3 ↗</a>
-        <iframe src="https://editor.p5js.org/sjm/embed/MXu47kQ5z?autoplay=1" title="Exercise 3" loading="lazy"></iframe>
+    <section id="vibe">
+      <h2 class="section-label">Vibe Coding Experiments</h2>
+      <div class="vibe-grid">
+        <div class="vibe-placeholder"><span>Session 1 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 2 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 3 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 4 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 5 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 6 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 7 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 8 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 9 — Coming Soon</span></div>
+        <div class="vibe-placeholder"><span>Session 10 — Coming Soon</span></div>
       </div>
+    </section>
 
-      <div class="exercise-item">
-        <a href="https://editor.p5js.org/sjm/full/PcA2eixI4" target="_blank">Exercise 4 ↗</a>
-        <iframe src="https://editor.p5js.org/sjm/embed/PcA2eixI4?autoplay=1" title="Exercise 4" loading="lazy"></iframe>
-      </div>
+    <footer>
+      <span>Seneca Moore · IML-300</span>
+      <span>Spring, 2026</span>
+    </footer>
 
-      <div class="exercise-item">
-        <a href="https://editor.p5js.org/sjm/full/eWtgEyQKA" target="_blank">Exercise 5 ↗</a>
-        <iframe src="https://editor.p5js.org/sjm/embed/eWtgEyQKA?autoplay=1" title="Exercise 5" loading="lazy"></iframe>
-      </div>
+  </main>
 
-    </div>
-  </section>
+  <script>
+    new p5(function(p) {
+      const PALETTE = ['#c4957a', '#c4a882', '#8a7560', '#6b4e35', '#3b2a1a'];
+      let particles = [];
+      const N = 55;
 
-  <!-- VIBE CODING -->
-  <section>
-    <h2>Vibe Coding Experiments</h2>
-    <div class="vibe-card">
-      <iframe src="https://editor.p5js.org/sjm/embed/b6GZlUoSO?autoplay=1" title="Video Game WOTM" loading="lazy"></iframe>
-      <div class="vibe-card-label">Video Game WOTM</div>
-    </div>
-  </section>
+      class Particle {
+        constructor() { this.reset(true); }
+        reset(init) {
+          this.x = p.random(p.width);
+          this.y = init ? p.random(p.height) : p.height + 10;
+          this.r = p.random(1.5, 4);
+          this.vx = p.random(-0.25, 0.25);
+          this.vy = p.random(-0.5, -0.15);
+          this.col = p.color(p.random(PALETTE));
+          this.alpha = p.random(60, 140);
+        }
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          if (this.y < -10) this.reset(false);
+        }
+        draw() {
+          this.col.setAlpha(this.alpha);
+          p.noStroke();
+          p.fill(this.col);
+          p.circle(this.x, this.y, this.r * 2);
+        }
+      }
 
-  <footer>Spring, 2025.</footer>
+      p.setup = function() {
+        const c = p.createCanvas(p.windowWidth, p.windowHeight);
+        c.parent('p5-bg');
+        for (let i = 0; i < N; i++) particles.push(new Particle());
+      };
 
-</main>
+      p.draw = function() {
+        p.clear();
+        p.background(250, 247, 242, 18);
+        p.strokeWeight(0.5);
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const d = p.dist(particles[i].x, particles[i].y, particles[j].x, particles[j].y);
+            if (d < 90) {
+              p.stroke(196, 168, 130, p.map(d, 0, 90, 35, 0));
+              p.line(particles[i].x, particles[i].y, particles[j].x, particles[j].y);
+            }
+          }
+        }
+        particles.forEach(pt => { pt.update(); pt.draw(); });
+      };
+
+      p.windowResized = function() {
+        p.resizeCanvas(p.windowWidth, p.windowHeight);
+      };
+    });
+  </script>
+
 </body>
 </html>
