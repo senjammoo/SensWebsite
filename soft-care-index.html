@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Soft Care Index</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F4EDE1;
+      --text:      #1C1410;
+      --mid:       #6A5748;
+      --muted:     #9D8878;
+      --accent:    #7C4D38;
+      --line:      rgba(124,77,56,.13);
+
+      --rest-bg:#EDE8F4; --rest-bor:#6554A0; --rest-txt:#3A2F70;
+      --joy-bg:#FAF1DC;  --joy-bor:#B87820;  --joy-txt:#6C3E10;
+      --mind-bg:#E8F5ED; --mind-bor:#2D7858; --mind-txt:#1A4D38;
+      --body-bg:#F5EBE4; --body-bor:#A0421E; --body-txt:#6B2A14;
+      --nour-bg:#EDF5E0; --nour-bor:#527A26; --nour-txt:#334A14;
+      --conn-bg:#F5E8ED; --conn-bor:#A02E5E; --conn-txt:#6B153C;
+      --crea-bg:#E4EEF8; --crea-bor:#2556A2; --crea-txt:#14346A;
+      --boun-bg:#F5E8E8; --boun-bor:#9C2C2C; --boun-txt:#6A1414;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── GRAIN OVERLAY ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: .45;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='.07'/%3E%3C/svg%3E");
+    }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 72px 64px 56px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 10px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: slideUp .7s ease forwards .1s;
+    }
+    .eyebrow::before,
+    .eyebrow::after {
+      content: '';
+      display: block;
+      height: 1px;
+      background: var(--accent);
+      opacity: .4;
+    }
+    .eyebrow::before { width: 32px; }
+    .eyebrow::after  { width: 20px; }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(60px, 9vw, 108px);
+      line-height: .88;
+      letter-spacing: -.02em;
+      color: var(--text);
+      margin-bottom: 36px;
+      opacity: 0;
+      animation: slideUp .85s ease forwards .2s;
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-foot {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 32px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: slideUp .85s ease forwards .35s;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.8;
+      color: var(--mid);
+      max-width: 500px;
+    }
+
+    .hero-count {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .count-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 72px;
+      font-weight: 300;
+      line-height: 1;
+      color: var(--text);
+      letter-spacing: -.03em;
+      display: block;
+    }
+    .count-label {
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .hero-rule {
+      height: 1px;
+      background: var(--line);
+      margin-top: 52px;
+      opacity: 0;
+      animation: fadeIn .9s ease forwards .5s;
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(244,237,225,.9);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .filter-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 14px 64px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-lbl {
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-right: 6px;
+    }
+    .pill {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      padding: 5px 15px;
+      border-radius: 100px;
+      border: 1px solid rgba(124,77,56,.22);
+      background: transparent;
+      color: var(--mid);
+      cursor: pointer;
+      transition: background .18s, color .18s, border-color .18s;
+      line-height: 1.5;
+    }
+    .pill:hover:not(.active) {
+      background: rgba(124,77,56,.07);
+      color: var(--text);
+    }
+    .pill.active { font-weight: 500; }
+
+    /* ── GRID ── */
+    .grid-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 44px 64px 88px;
+    }
+    .grid-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .grid-showing {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      border-radius: 18px;
+      padding: 24px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border: 1px solid;
+      transition: transform .22s ease, box-shadow .22s ease;
+      opacity: 0;
+      animation: cardIn .45s ease forwards;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(28,20,16,.09);
+    }
+
+    .c-tag {
+      font-size: 9px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+    .c-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 21px;
+      font-weight: 500;
+      line-height: 1.15;
+    }
+    .c-desc {
+      font-size: 12.5px;
+      font-weight: 300;
+      line-height: 1.68;
+      margin-top: 3px;
+    }
+    .c-num {
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: .1em;
+      margin-top: auto;
+      padding-top: 16px;
+      opacity: .45;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 36px 64px;
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .footer-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 19px;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--mid);
+    }
+    .footer-id {
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 800px) {
+      .hero, .grid-wrap, footer { padding-left: 24px; padding-right: 24px; }
+      .filter-inner { padding-left: 24px; padding-right: 24px; }
+      .hero { padding-top: 48px; padding-bottom: 40px; }
+      .hero-count { display: none; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <header class="hero">
+    <p class="eyebrow">A Curated Archive</p>
+    <h1>The Soft<br>Care <em>Index</em></h1>
+    <div class="hero-foot">
+      <p class="hero-desc">57 radical acts of self-preservation — from rest and joy to mindfulness, nourishment, and boundaries. Filter by category and discover what you need right now.</p>
+      <div class="hero-count">
+        <span class="count-num">57</span>
+        <span class="count-label">practices archived</span>
+      </div>
+    </div>
+    <div class="hero-rule"></div>
+  </header>
+
+  <!-- FILTER BAR -->
+  <nav class="filter-bar" aria-label="Filter by category">
+    <div class="filter-inner" id="filters">
+      <span class="filter-lbl">Filter</span>
+    </div>
+  </nav>
+
+  <!-- GRID -->
+  <main class="grid-wrap">
+    <div class="grid-meta">
+      <span class="grid-showing" id="grid-showing"></span>
+    </div>
+    <div class="grid" id="grid" role="list" aria-label="Self-care practices"></div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <p class="footer-quote">You deserve to be cared for — especially by yourself.</p>
+    <span class="footer-id">The Soft Care Index</span>
+  </footer>
+
+<script>
+const CATS = [
+  { id:'all',          label:'All',          bg:null,               bor:null,              txt:null               },
+  { id:'rest',         label:'Rest',          bg:'var(--rest-bg)',   bor:'var(--rest-bor)', txt:'var(--rest-txt)'  },
+  { id:'joy',          label:'Joy',           bg:'var(--joy-bg)',    bor:'var(--joy-bor)',  txt:'var(--joy-txt)'   },
+  { id:'mindfulness',  label:'Mindfulness',   bg:'var(--mind-bg)',   bor:'var(--mind-bor)', txt:'var(--mind-txt)'  },
+  { id:'body',         label:'Body',          bg:'var(--body-bg)',   bor:'var(--body-bor)', txt:'var(--body-txt)'  },
+  { id:'nourishment',  label:'Nourishment',   bg:'var(--nour-bg)',   bor:'var(--nour-bor)', txt:'var(--nour-txt)'  },
+  { id:'connection',   label:'Connection',    bg:'var(--conn-bg)',   bor:'var(--conn-bor)', txt:'var(--conn-txt)'  },
+  { id:'creativity',   label:'Creativity',    bg:'var(--crea-bg)',   bor:'var(--crea-bor)', txt:'var(--crea-txt)'  },
+  { id:'boundaries',   label:'Boundaries',    bg:'var(--boun-bg)',   bor:'var(--boun-bor)', txt:'var(--boun-txt)'  },
+];
+
+const P = [
+  {c:'rest',        n:'Sleep without an alarm',            d:'Let your body wake when it is ready, not when the world demands it.'},
+  {c:'rest',        n:'Nap without guilt',                 d:'Close your eyes in the afternoon. You are allowed.'},
+  {c:'rest',        n:'Do absolutely nothing',             d:'Ten minutes. No phone, no task, no goal. Just be here.'},
+  {c:'rest',        n:'Cancel the plans you dread',        d:'Your peace is worth more than showing up.'},
+  {c:'rest',        n:'Lie in sunlight',                   d:'Find a warm patch of light and exist in it like a cat.'},
+  {c:'rest',        n:'Rest your eyes from screens',       d:'Give yourself an hour. The world will wait.'},
+  {c:'rest',        n:'Take a slow bath',                  d:'Not efficient. Not rushed. Just warm water and quiet.'},
+  {c:'rest',        n:'Sleep when you are tired',          d:'Go to bed when your body asks, not when the schedule says.'},
+
+  {c:'joy',         n:'Dance alone in your kitchen',       d:'No audience, no judgment. Just you and the music.'},
+  {c:'joy',         n:'Watch your comfort film again',     d:'The one you have seen ten times. Watch it anyway.'},
+  {c:'joy',         n:'Buy yourself flowers',              d:'Do not wait for someone else to think of it.'},
+  {c:'joy',         n:'Eat dessert first',                 d:'Life is uncertain. Start with what delights you.'},
+  {c:'joy',         n:'Sing loudly in the car',            d:'Every note is exactly the right note.'},
+  {c:'joy',         n:'Make something with your hands',    d:'Bake, fold, paint, build. Let your hands lead for once.'},
+  {c:'joy',         n:'Laugh until your stomach hurts',    d:'Seek out the people and things that do this to you.'},
+  {c:'joy',         n:'Revisit a childhood joy',           d:'You are never too old for something that made you feel alive.'},
+
+  {c:'mindfulness', n:'Sit with only your tea',            d:'Hold the warmth. Breathe the steam. Drink slowly.'},
+  {c:'mindfulness', n:'Name five things you can see',      d:'Right now. Here, not there.'},
+  {c:'mindfulness', n:'Breathe slowly for two minutes',    d:'In for four, out for six. Let the nervous system soften.'},
+  {c:'mindfulness', n:'Journal without editing yourself',  d:'Write without stopping. Let the messy truth appear.'},
+  {c:'mindfulness', n:'Step outside and feel the air',     d:'Notice the temperature. The light. Whether it smells like rain.'},
+  {c:'mindfulness', n:'Eat one meal without your phone',   d:'Just the food and what it actually tastes like.'},
+  {c:'mindfulness', n:'Notice what your body needs',       d:'Ask sincerely. The answer is usually simpler than you expect.'},
+
+  {c:'body',        n:'Stretch for five minutes',          d:'No routine required. Just move toward what feels tight.'},
+  {c:'body',        n:'Walk somewhere slowly',             d:'Without headphones. Without a destination. Just moving.'},
+  {c:'body',        n:'Put lotion on your hands intentionally', d:'A small act of tenderness toward your own body.'},
+  {c:'body',        n:'Move for joy, not punishment',      d:'What would you do with your body if it were a gift?'},
+  {c:'body',        n:'Drink a full glass of water',       d:'Stop. Sit. Drink the whole thing. Notice how it feels.'},
+  {c:'body',        n:'Roll your shoulders back',          d:'Make space. Then breathe deeply into it.'},
+  {c:'body',        n:'Dance to one song',                 d:'Not a workout. Just one song, in your body, alive.'},
+  {c:'body',        n:'Rest before you are depleted',      d:'Radical maintenance, not emergency repair.'},
+
+  {c:'nourishment', n:'Cook something from scratch',       d:'Let the process be meditative. Nourishment begins before eating.'},
+  {c:'nourishment', n:'Eat something that comforts you',   d:'Food carries memory. Let it warm you on purpose.'},
+  {c:'nourishment', n:'Sit at a table to eat',             d:'Not the couch, not your desk. A proper seat for a proper meal.'},
+  {c:'nourishment', n:'Make yourself a real breakfast',    d:'The kind you might make for someone you love deeply.'},
+  {c:'nourishment', n:'Eat one bite at a time',            d:'Chew. Pause. Let your body be part of the meal.'},
+  {c:'nourishment', n:'Nourish yourself like someone you love', d:'What would you feed someone you were truly caring for?'},
+  {c:'nourishment', n:'Make a cup of tea just for you',    d:'Choose the mug that makes you happy. Take your time.'},
+
+  {c:'connection',  n:'Text someone you miss',             d:'No agenda. Just: I was thinking of you.'},
+  {c:'connection',  n:'Call a friend without a reason',    d:'The call that is the reason is the best kind.'},
+  {c:'connection',  n:'Spend time with an animal',         d:'They do not need you to be anything other than present.'},
+  {c:'connection',  n:'Write a letter you may not send',   d:'Some things need to be said, even if only into the drawer.'},
+  {c:'connection',  n:'Ask for help with something small', d:'Practice receiving. It is harder than it looks.'},
+  {c:'connection',  n:'Say I love you first',              d:'Do not wait to see if they will say it. Lead with love.'},
+  {c:'connection',  n:'Let someone care for you',          d:'Receive without deflecting. You deserve to be held.'},
+
+  {c:'creativity',  n:'Doodle without purpose',            d:'Not art. Just the pen moving. No outcome required.'},
+  {c:'creativity',  n:'Make a playlist for a feeling',     d:'What does right now sound like? Go find it.'},
+  {c:'creativity',  n:'Rearrange something in your home',  d:'Move the furniture. Shift the shelf. Make a new world.'},
+  {c:'creativity',  n:'Photograph what is beautiful to you', d:'Train your eye to find the good things.'},
+  {c:'creativity',  n:'Write one sentence about today',    d:'Just one. Something true. You will want it later.'},
+  {c:'creativity',  n:'Try something badly on purpose',    d:'Draw badly. Bake badly. The doing is the whole point.'},
+
+  {c:'boundaries',  n:'Say no without explaining',         d:'No is a complete sentence. You are practicing now.'},
+  {c:'boundaries',  n:'Mute notifications for an hour',    d:'The world will still be there. You will be quieter.'},
+  {c:'boundaries',  n:'Log off social media for a day',    d:'Your presence offline is real. The feed is optional.'},
+  {c:'boundaries',  n:'Protect your morning',              d:'Before you give the day to others, give it to yourself first.'},
+  {c:'boundaries',  n:'Leave a draining conversation',     d:'You are allowed to end things that cost too much.'},
+  {c:'boundaries',  n:'Ask for what you actually need',    d:'Not the easier version. The true thing. Say it clearly.'},
+  {c:'boundaries',  n:'Stop apologizing for your needs',   d:'They are not inconveniences. They are information.'},
+];
+
+const CM = Object.fromEntries(CATS.map(c => [c.id, c]));
+let active = 'all';
+
+function renderFilters() {
+  const el = document.getElementById('filters');
+  el.innerHTML = '<span class="filter-lbl">Filter</span>';
+  CATS.forEach(cat => {
+    const isA = active === cat.id;
+    const b = document.createElement('button');
+    b.className = 'pill' + (isA ? ' active' : '');
+    b.textContent = cat.label;
+    b.setAttribute('aria-pressed', isA);
+    if (isA && cat.bg) {
+      b.style.cssText = `background:${cat.bg};border-color:${cat.bor};color:${cat.txt};`;
+    } else if (isA) {
+      b.style.cssText = `background:rgba(124,77,56,.1);border-color:var(--accent);color:var(--text);`;
+    }
+    b.addEventListener('click', () => { active = cat.id; renderFilters(); renderGrid(); });
+    el.appendChild(b);
+  });
+}
+
+function renderGrid() {
+  const filtered = active === 'all' ? P : P.filter(p => p.c === active);
+  const s = document.getElementById('grid-showing');
+  s.textContent = active === 'all'
+    ? `All ${filtered.length} practices`
+    : `${filtered.length} practice${filtered.length !== 1 ? 's' : ''} in ${CM[active].label}`;
+
+  const g = document.getElementById('grid');
+  g.innerHTML = '';
+  filtered.forEach((p, i) => {
+    const cat = CM[p.c];
+    const idx = String(P.indexOf(p) + 1).padStart(3, '0');
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.setAttribute('role', 'listitem');
+    card.style.cssText = `background:${cat.bg};border-color:${cat.bor};animation-delay:${Math.min(i * 0.038, 0.55)}s`;
+    card.innerHTML = `
+      <span class="c-tag" style="color:${cat.bor}">${cat.label}</span>
+      <h2 class="c-name" style="color:${cat.txt}">${p.n}</h2>
+      <p class="c-desc" style="color:${cat.bor}">${p.d}</p>
+      <span class="c-num" style="color:${cat.bor}">${idx}</span>
+    `;
+    g.appendChild(card);
+  });
+}
+
+renderFilters();
+renderGrid();
+</script>
+</body>
+</html>

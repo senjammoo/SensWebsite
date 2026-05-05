@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soft Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;1,6..72,200;1,6..72,300&family=DM+Serif+Display:ital@0;1&family=Martian+Mono:wght@100;200;300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --paper: #f5f0e8;
+  --paper2: #ede7d9;
+  --ink: #2a2420;
+  --ink2: #5a4f47;
+  --ink3: #8a7f77;
+  --rose: #c4857a;
+  --sage: #7a9e8a;
+  --dust: #a09080;
+  --speed: 0; /* 0=still, 1=fast — set by JS */
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Newsreader', Georgia, serif;
+  cursor: none;
+  position: relative;
+  transition: background 2s ease;
+}
+
+/* when moving fast, background bleaches */
+body.fast { background: var(--paper2); }
+
+/* ── custom cursor ── */
+#cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: width 0.4s ease, height 0.4s ease, border-radius 0.4s ease, background 0.4s ease, opacity 0.3s;
+}
+#cursor.slow {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(42,36,32,0.12);
+  border: 1px solid rgba(42,36,32,0.2);
+}
+#cursor.fast {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: rgba(42,36,32,0.3);
+  border: none;
+}
+#cursor.still {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(196,133,122,0.08);
+  border: 1px solid rgba(196,133,122,0.25);
+}
+
+/* ── canvas ── */
+#canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── text layer ── */
+#text-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.fragment {
+  position: absolute;
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 200;
+  font-style: italic;
+  color: var(--ink);
+  line-height: 1.5;
+  pointer-events: none;
+  transition: opacity 1.8s ease, filter 1.8s ease, transform 1.8s ease;
+  transform-origin: center center;
+  will-change: opacity, filter;
+  user-select: none;
+}
+
+.fragment.hidden {
+  opacity: 0;
+  filter: blur(4px);
+  transform: scale(0.97);
+}
+
+.fragment.partial {
+  opacity: 0.15;
+  filter: blur(1.5px);
+  transform: scale(0.99);
+}
+
+.fragment.visible {
+  opacity: 1;
+  filter: blur(0px);
+  transform: scale(1);
+}
+
+/* ── UI shell ── */
+#shell {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── header ── */
+#header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 2rem 2.5rem 1.5rem;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.h-title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink3);
+  letter-spacing: 0.08em;
+}
+
+.h-right {
+  text-align: right;
+  font-family: 'Martian Mono', monospace;
+  font-size: 9px;
+  font-weight: 200;
+  color: var(--ink3);
+  letter-spacing: 0.1em;
+  line-height: 1.9;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* ── velocity meter ── */
+#vel-bar {
+  position: fixed;
+  left: 2.5rem;
+  bottom: 2.5rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+.vel-label {
+  font-family: 'Martian Mono', monospace;
+  font-size: 8px;
+  font-weight: 200;
+  color: var(--ink3);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.vel-track {
+  width: 80px;
+  height: 1px;
+  background: rgba(42,36,32,0.1);
+  position: relative;
+  overflow: visible;
+}
+.vel-fill {
+  height: 100%;
+  background: var(--rose);
+  width: 0%;
+  transition: width 0.3s ease, background 0.5s ease;
+  position: absolute;
+  top: 0; left: 0;
+}
+/* inverted: full = slow (more visible), empty = fast */
+.vel-fill.slow { background: var(--sage); }
+
+/* ── center instruction ── */
+#instruction {
+  position: fixed;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  text-align: center;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+#instruction p {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink3);
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+#instruction.fade { opacity: 0; }
+
+/* ── page counter ── */
+#page-counter {
+  position: fixed;
+  right: 2.5rem;
+  bottom: 2.5rem;
+  z-index: 20;
+  font-family: 'Martian Mono', monospace;
+  font-size: 9px;
+  font-weight: 200;
+  color: var(--ink3);
+  letter-spacing: 0.15em;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ── breathing ring at cursor ── */
+#breath-ring {
+  position: fixed;
+  border-radius: 50%;
+  border: 1px solid rgba(122,158,138,0.2);
+  pointer-events: none;
+  z-index: 4;
+  transform: translate(-50%,-50%);
+  transition: width 2s ease, height 2s ease, opacity 1s ease, border-color 1s ease;
+  animation: breathe 4s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,100%{transform:translate(-50%,-50%) scale(1);}
+  50%{transform:translate(-50%,-50%) scale(1.06);}
+}
+
+/* ── paper texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+
+/* ── subtle ruled lines ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 27px,
+    rgba(42,36,32,0.04) 27px,
+    rgba(42,36,32,0.04) 28px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── scattered ink marks ── */
+.ink-mark {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ink);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+/* ── entry fade ── */
+@keyframes entry {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+#shell, #vel-bar, #instruction, #page-counter, #header {
+  animation: entry 2s forwards ease-out;
+}
+</style>
+</head>
+<body>
+
+<div id="cursor" class="still"></div>
+<div id="breath-ring"></div>
+<canvas id="canvas"></canvas>
+<div id="text-layer"></div>
+
+<div id="header">
+  <div class="h-title">Soft Archive</div>
+  <div class="h-right">
+    After Chia Amisola<br>
+    Move gently<br>
+    to read
+  </div>
+</div>
+
+<div id="vel-bar">
+  <div class="vel-label">stillness</div>
+  <div class="vel-track">
+    <div class="vel-fill slow" id="vel-fill"></div>
+  </div>
+</div>
+
+<div id="instruction">
+  <p>slow down to read — the archive opens with patience</p>
+</div>
+
+<div id="page-counter" id="page-counter">
+  <span id="visible-count">0</span> / <span id="total-count">0</span> fragments visible
+</div>
+
+<script>
+// ── text fragments — the archive ──
+const fragments = [
+  // On slowness
+  { text: "you do not need to optimize yourself\ninto usefulness", size: 1.4, color: 'ink' },
+  { text: "rest is not the pause\nbetween productivity", size: 1.0, color: 'rose' },
+  { text: "some things cannot be extracted\nonly received", size: 1.1, color: 'sage' },
+  { text: "the archive does not demand\nyour attention all at once", size: 0.85, color: 'dust' },
+  { text: "multiplicity is not chaos\nit is the honest shape of things", size: 1.2, color: 'ink' },
+
+  // On tenderness
+  { text: "tenderness is a technology\nwe forgot to fund", size: 0.9, color: 'rose' },
+  { text: "you are allowed to be\nmore than one thing", size: 1.3, color: 'ink' },
+  { text: "soft does not mean\nwithout structure", size: 0.8, color: 'sage' },
+  { text: "care as code —\nnon-extractive, patient, iterative", size: 0.95, color: 'dust' },
+  { text: "what would it mean\nto build gently", size: 1.1, color: 'ink' },
+
+  // On digital space
+  { text: "the website as a room\nyou can breathe in", size: 1.0, color: 'sage' },
+  { text: "not everything online\nneeds to be efficient", size: 0.85, color: 'rose' },
+  { text: "there is data\nand there is knowing", size: 1.2, color: 'ink' },
+  { text: "this is a tender infrastructure\nfor things that don't scale", size: 0.9, color: 'dust' },
+  { text: "slowness as resistance\nnot failure", size: 1.15, color: 'ink' },
+
+  // On memory
+  { text: "an archive is not a monument\nit is a living relationship", size: 1.0, color: 'rose' },
+  { text: "some things are worth\nkeeping un-indexed", size: 0.9, color: 'sage' },
+  { text: "to hold something gently\nis also to know it", size: 1.1, color: 'ink' },
+  { text: "what you carry quietly\ndoes not disappear", size: 1.25, color: 'dust' },
+  { text: "the soft parts of a system\nare often the truest", size: 0.85, color: 'ink' },
+
+  // On body & being
+  { text: "you are not a user\nyou are a person visiting", size: 1.0, color: 'rose' },
+  { text: "move at the speed\nyour body understands", size: 1.1, color: 'sage' },
+  { text: "singular narratives\nleave everyone out", size: 0.95, color: 'ink' },
+  { text: "to be multiple\nis to be true", size: 1.3, color: 'dust' },
+  { text: "the body knows things\nthe interface doesn't ask about", size: 0.85, color: 'rose' },
+
+  // Small, intimate
+  { text: "here", size: 2.2, color: 'ink' },
+  { text: "softly", size: 1.8, color: 'rose' },
+  { text: "stay", size: 2.0, color: 'sage' },
+  { text: "a little longer", size: 1.4, color: 'dust' },
+  { text: "still", size: 2.4, color: 'ink' },
+  { text: "you arrived", size: 1.5, color: 'rose' },
+  { text: "take your time", size: 1.3, color: 'sage' },
+  { text: "unhurried", size: 1.6, color: 'dust' },
+
+  // Longer reflections
+  { text: "optimization culture wants\nyou to move faster, want more,\nprocess quicker", size: 0.8, color: 'dust' },
+  { text: "Chia Amisola writes of\nwebsites as living rooms —\nwarm, inviting, yours", size: 0.8, color: 'sage' },
+  { text: "non-extractive code is code\nthat does not take more\nthan it gives", size: 0.8, color: 'rose' },
+];
+
+const colorMap = {
+  ink: '#2a2420',
+  rose: '#b0706a',
+  sage: '#6a8e7a',
+  dust: '#8a7868',
+};
+
+const W_el = document.getElementById('text-layer');
+const velFill = document.getElementById('vel-fill');
+const instruction = document.getElementById('instruction');
+const visCount = document.getElementById('visible-count');
+const totalCount = document.getElementById('total-count');
+const breathRing = document.getElementById('breath-ring');
+const cursorEl = document.getElementById('cursor');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let W = window.innerWidth, H = window.innerHeight;
+canvas.width = W; canvas.height = H;
+window.addEventListener('resize', () => {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W; canvas.height = H;
+  placeFragments();
+});
+
+totalCount.textContent = fragments.length;
+
+// ── velocity tracking ──
+let mx = W/2, my = H/2;
+let pmx = W/2, pmy = H/2;
+let velocity = 0;
+let smoothVel = 0;
+let stillTimer = 0;
+let hasMovedOnce = false;
+let instructionFaded = false;
+
+document.addEventListener('mousemove', e => {
+  pmx = mx; pmy = my;
+  mx = e.clientX; my = e.clientY;
+  const dx = mx - pmx, dy = my - pmy;
+  velocity = Math.sqrt(dx*dx + dy*dy);
+  if (!hasMovedOnce && velocity > 2) {
+    hasMovedOnce = true;
+    setTimeout(() => {
+      instruction.classList.add('fade');
+      instructionFaded = true;
+    }, 3000);
+  }
+  stillTimer = 0;
+});
+
+// ── place fragments ──
+let fragEls = [];
+function placeFragments() {
+  W_el.innerHTML = '';
+  fragEls = [];
+  const margin = 0.06;
+  const cols = 3, rows = Math.ceil(fragments.length / cols);
+  const cellW = W * (1 - margin*2) / cols;
+  const cellH = H * (1 - margin*2) / rows;
+
+  fragments.forEach((f, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+
+    const el = document.createElement('div');
+    el.className = 'fragment hidden';
+    el.textContent = f.text;
+
+    // Position with gentle randomness
+    const seed = seededRng(i * 17 + 3);
+    const jx = (seed() - 0.5) * cellW * 0.3;
+    const jy = (seed() - 0.5) * cellH * 0.4;
+    const x = W * margin + col * cellW + cellW * 0.15 + jx;
+    const y = H * margin + row * cellH + cellH * 0.3 + jy;
+
+    el.style.left = Math.max(W*0.04, Math.min(W*0.85, x)) + 'px';
+    el.style.top = Math.max(H*0.08, Math.min(H*0.88, y)) + 'px';
+    el.style.fontSize = (f.size * (Math.min(W,H) * 0.018)) + 'px';
+    el.style.color = colorMap[f.color] || colorMap.ink;
+    el.style.maxWidth = (cellW * 0.85) + 'px';
+    // subtle rotation
+    const rot = (seed() - 0.5) * 1.8;
+    el.style.transform = `rotate(${rot}deg) scale(0.97)`;
+    el.dataset.rot = rot;
+    el.dataset.baseSize = f.size;
+
+    W_el.appendChild(el);
+    fragEls.push(el);
+  });
+}
+placeFragments();
+
+// ── canvas: soft watercolor circles ──
+let inkSpots = [];
+function addInkSpot(x, y, slow) {
+  inkSpots.push({
+    x, y,
+    r: slow ? Math.random()*60+30 : Math.random()*15+5,
+    alpha: 0,
+    maxAlpha: slow ? 0.04 + Math.random()*0.04 : 0.01,
+    growing: true,
+    color: slow ? ['rgba(196,133,122','rgba(122,158,138','rgba(160,144,128'][Math.floor(Math.random()*3)] : 'rgba(42,36,32',
+    life: 0,
+    maxLife: slow ? 280 + Math.random()*200 : 80,
+  });
+  if (inkSpots.length > 60) inkSpots.shift();
+}
+
+function drawCanvas() {
+  ctx.clearRect(0, 0, W, H);
+  inkSpots = inkSpots.filter(s => s.life < s.maxLife);
+  inkSpots.forEach(s => {
+    s.life++;
+    const prog = s.life / s.maxLife;
+    s.alpha = prog < 0.3 ? (prog/0.3)*s.maxAlpha : prog > 0.7 ? (1-(prog-0.7)/0.3)*s.maxAlpha : s.maxAlpha;
+    const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+    grad.addColorStop(0, s.color + `,${s.alpha})`);
+    grad.addColorStop(1, s.color + `,0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r * (0.8 + prog*0.2), 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+// ── seeded RNG ──
+function seededRng(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+// ── main loop ──
+let frame = 0;
+let lastInkFrame = 0;
+
+function loop() {
+  frame++;
+  stillTimer++;
+
+  // smooth velocity
+  smoothVel = smoothVel * 0.88 + velocity * 0.12;
+  velocity *= 0.7; // decay
+
+  // stillness factor: 0=fast, 1=perfectly still
+  const isStill = stillTimer > 40;
+  const fastThresh = 18;
+  const stillFactor = isStill ? 1.0 : Math.max(0, 1 - smoothVel / fastThresh);
+
+  // velocity bar (inverted — full = slow/still)
+  const barPct = stillFactor * 100;
+  velFill.style.width = barPct + '%';
+  velFill.className = 'vel-fill ' + (stillFactor > 0.5 ? 'slow' : '');
+
+  // cursor appearance
+  if (isStill) {
+    cursorEl.className = 'still';
+  } else if (smoothVel > 10) {
+    cursorEl.className = 'fast';
+  } else {
+    cursorEl.className = 'slow';
+  }
+  cursorEl.style.left = mx + 'px';
+  cursorEl.style.top = my + 'px';
+
+  // breath ring follows cursor, size based on stillness
+  const ringSize = 60 + stillFactor * 100;
+  breathRing.style.left = mx + 'px';
+  breathRing.style.top = my + 'px';
+  breathRing.style.width = ringSize + 'px';
+  breathRing.style.height = ringSize + 'px';
+  breathRing.style.opacity = stillFactor * 0.8;
+  breathRing.style.borderColor = stillFactor > 0.5
+    ? 'rgba(122,158,138,0.25)'
+    : 'rgba(196,133,122,0.15)';
+
+  // update fragment visibility
+  let numVisible = 0;
+  fragEls.forEach((el, i) => {
+    const elX = parseFloat(el.style.left);
+    const elY = parseFloat(el.style.top);
+    const dx = mx - elX, dy = my - elY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    // Proximity influence
+    const proxRadius = 280 + stillFactor * 220;
+    const proxFactor = Math.max(0, 1 - dist / proxRadius);
+
+    // Combined: proximity + global stillness
+    const globalStillness = stillFactor;
+    const revealStrength = Math.max(proxFactor * (0.3 + stillFactor * 0.7), globalStillness * 0.35);
+
+    if (revealStrength > 0.65) {
+      el.className = 'fragment visible';
+      el.style.transform = `rotate(${el.dataset.rot}deg) scale(1)`;
+      numVisible++;
+    } else if (revealStrength > 0.2) {
+      el.className = 'fragment partial';
+      el.style.transform = `rotate(${el.dataset.rot}deg) scale(0.99)`;
+    } else {
+      el.className = 'fragment hidden';
+      el.style.transform = `rotate(${el.dataset.rot}deg) scale(0.97)`;
+    }
+  });
+
+  visCount.textContent = numVisible;
+
+  // ink spots
+  if (frame - lastInkFrame > (smoothVel < 3 ? 8 : 30)) {
+    addInkSpot(mx + (Math.random()-0.5)*40, my + (Math.random()-0.5)*40, stillFactor > 0.4);
+    lastInkFrame = frame;
+  }
+
+  drawCanvas();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// ── touch support ──
+document.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  const prevMx = mx, prevMy = my;
+  mx = t.clientX; my = t.clientY;
+  velocity = Math.sqrt((mx-prevMx)**2+(my-prevMy)**2);
+  stillTimer = 0;
+  e.preventDefault();
+}, { passive: false });
+</script>
+</body>
+</html>

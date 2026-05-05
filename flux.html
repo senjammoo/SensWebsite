@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flux — What Screens Want</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Syne+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f0ebe0;
+    --ink: #0e0d0b;
+    --muted: #6b6457;
+    --accent: #c8a96a;
+    --glow: rgba(200, 169, 106, 0.15);
+  }
+
+  html { font-size: 16px; }
+
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'EB Garamond', Georgia, serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, opacity 0.3s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(200, 169, 106, 0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.18s ease, width 0.2s, height 0.2s, opacity 0.3s;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* Noise grain */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 101;
+    animation: grain 0.5s steps(1) infinite;
+  }
+  @keyframes grain {
+    0%  { transform: translate(0,0); }
+    10% { transform: translate(-2%,-3%); }
+    20% { transform: translate(3%,2%); }
+    30% { transform: translate(-1%,4%); }
+    40% { transform: translate(4%,-1%); }
+    50% { transform: translate(-3%,1%); }
+    60% { transform: translate(2%,-4%); }
+    70% { transform: translate(-4%,3%); }
+    80% { transform: translate(1%,-2%); }
+    90% { transform: translate(-2%,4%); }
+    100%{ transform: translate(3%,-3%); }
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 8vw 8vw 8vw;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .hero-word {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(80px, 22vw, 260px);
+    line-height: 0.88;
+    letter-spacing: -0.03em;
+    color: var(--cream);
+    position: relative;
+    user-select: none;
+    will-change: transform;
+  }
+
+  .hero-word .glitch-layer {
+    position: absolute;
+    top: 0; left: 0;
+    color: var(--accent);
+    clip-path: inset(0 0 60% 0);
+    opacity: 0;
+    animation: glitch-top 8s 2s infinite;
+  }
+  .hero-word .glitch-layer2 {
+    position: absolute;
+    top: 0; left: 0;
+    color: #7ab8d4;
+    clip-path: inset(55% 0 0 0);
+    opacity: 0;
+    animation: glitch-bot 8s 2.05s infinite;
+  }
+
+  @keyframes glitch-top {
+    0%,88%,100% { opacity:0; transform: translate(0,0); }
+    89% { opacity:0.7; transform: translate(-4px, -2px); }
+    90% { opacity:0.9; transform: translate(6px, 1px); }
+    91% { opacity:0.5; transform: translate(-2px, 0); }
+    92% { opacity:0; }
+  }
+  @keyframes glitch-bot {
+    0%,88%,100% { opacity:0; transform: translate(0,0); }
+    89% { opacity:0.6; transform: translate(4px, 2px); }
+    90% { opacity:0.8; transform: translate(-6px, -1px); }
+    91% { opacity:0.4; transform: translate(2px, 0); }
+    92% { opacity:0; }
+  }
+
+  .hero-sub {
+    font-family: 'Syne Mono', monospace;
+    font-size: clamp(10px, 1.2vw, 14px);
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeup 1.2s 0.4s forwards ease-out;
+  }
+
+  .hero-desc {
+    font-family: 'EB Garamond', serif;
+    font-size: clamp(16px, 2vw, 22px);
+    font-style: italic;
+    color: rgba(240, 235, 224, 0.55);
+    margin-top: 1rem;
+    max-width: 520px;
+    line-height: 1.6;
+    opacity: 0;
+    animation: fadeup 1.2s 0.7s forwards ease-out;
+  }
+
+  @keyframes fadeup {
+    from { opacity:0; transform: translateY(16px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 8vw;
+    font-family: 'Syne Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeup 1s 1.5s forwards ease-out;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .scroll-hint::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--muted);
+    animation: pulse-line 2s infinite;
+  }
+  @keyframes pulse-line {
+    0%,100% { width:40px; opacity:1; }
+    50% { width:70px; opacity:0.4; }
+  }
+
+  /* ─── SECTION: FLUX PANELS ─── */
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+  }
+
+  .panel {
+    padding: 8vw 6vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel--dark { background: #0a0908; }
+  .panel--light { background: var(--cream); color: var(--ink); }
+
+  .panel-number {
+    font-family: 'Syne Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+    opacity: 0.4;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(32px, 4.5vw, 58px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  .panel-body {
+    font-size: clamp(16px, 1.5vw, 20px);
+    line-height: 1.75;
+    max-width: 38ch;
+    opacity: 0.75;
+  }
+
+  .panel--light .panel-number { color: var(--ink); }
+  .panel--light .panel-body { opacity: 0.6; }
+
+  /* Animated border between panels */
+  .panels::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+    animation: border-slide 4s ease-in-out infinite;
+  }
+  .panels { position: relative; }
+  @keyframes border-slide {
+    0%,100% { opacity:0.2; transform: scaleY(0.5) translateY(50%); }
+    50% { opacity:0.8; transform: scaleY(1) translateY(0); }
+  }
+
+  /* ─── SECTION: THE CLOCK ─── */
+  .clock-section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8vw;
+    text-align: center;
+    background: #0e0d0b;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .clock-label {
+    font-family: 'Syne Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2rem;
+  }
+
+  .clock-headline {
+    font-family: 'EB Garamond', serif;
+    font-size: clamp(26px, 4vw, 54px);
+    font-style: italic;
+    line-height: 1.3;
+    max-width: 700px;
+    margin: 0 auto 3rem;
+    color: var(--cream);
+  }
+
+  .live-clock {
+    font-family: 'Syne Mono', monospace;
+    font-size: clamp(48px, 12vw, 140px);
+    color: var(--cream);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    position: relative;
+  }
+  .live-clock .colon {
+    animation: blink 1s step-end infinite;
+    color: var(--accent);
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.1} }
+
+  .clock-caption {
+    font-size: clamp(14px, 1.4vw, 18px);
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 1.5rem;
+    max-width: 420px;
+  }
+
+  /* radial rings */
+  .rings {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(200, 169, 106, 0.07);
+    animation: expand 6s ease-in-out infinite;
+  }
+  .ring:nth-child(1) { width: 300px; height: 300px; animation-delay: 0s; }
+  .ring:nth-child(2) { width: 500px; height: 500px; animation-delay: 1.5s; }
+  .ring:nth-child(3) { width: 700px; height: 700px; animation-delay: 3s; }
+  .ring:nth-child(4) { width: 900px; height: 900px; animation-delay: 4.5s; }
+  @keyframes expand {
+    0%  { opacity:0.6; transform:scale(0.95); }
+    50% { opacity:1; transform:scale(1); }
+    100%{ opacity:0.6; transform:scale(0.95); }
+  }
+
+  /* ─── SECTION: WORDS IN FLUX ─── */
+  .flux-section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8vw;
+    background: var(--cream);
+    color: var(--ink);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .flux-eyebrow {
+    font-family: 'Syne Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3rem;
+  }
+
+  .flux-text {
+    font-family: 'EB Garamond', serif;
+    font-size: clamp(28px, 5vw, 64px);
+    line-height: 1.25;
+    max-width: 900px;
+  }
+
+  .morph-word {
+    display: inline-block;
+    color: var(--accent);
+    position: relative;
+    font-style: italic;
+    min-width: 3ch;
+    transition: opacity 0.3s;
+  }
+
+  .morph-word::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.4;
+    transform-origin: left;
+    animation: underline-pulse 3s ease-in-out infinite;
+  }
+  @keyframes underline-pulse {
+    0%,100% { transform: scaleX(1); opacity:0.4; }
+    50% { transform: scaleX(0.6); opacity:0.8; }
+  }
+
+  .flux-note {
+    font-size: clamp(15px, 1.4vw, 18px);
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 3rem;
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  /* ─── SECTION: QUOTE ─── */
+  .quote-section {
+    background: var(--ink);
+    padding: 12vw 8vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .quote-rule {
+    width: 60px;
+    height: 1px;
+    background: var(--accent);
+    margin: 0 auto 3rem;
+    animation: rule-breathe 4s ease-in-out infinite;
+  }
+  @keyframes rule-breathe {
+    0%,100% { width:60px; opacity:0.6; }
+    50% { width:100px; opacity:1; }
+  }
+
+  .quote-text {
+    font-family: 'EB Garamond', serif;
+    font-size: clamp(24px, 4vw, 52px);
+    font-style: italic;
+    line-height: 1.35;
+    max-width: 800px;
+    color: var(--cream);
+    position: relative;
+  }
+  .quote-text::before {
+    content: '"';
+    font-size: 1.4em;
+    color: var(--accent);
+    opacity: 0.4;
+    line-height: 0;
+    vertical-align: -0.4em;
+    margin-right: 0.1em;
+  }
+  .quote-text::after {
+    content: '"';
+    font-size: 1.4em;
+    color: var(--accent);
+    opacity: 0.4;
+    line-height: 0;
+    vertical-align: -0.4em;
+    margin-left: 0.05em;
+  }
+
+  .quote-attr {
+    font-family: 'Syne Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2.5rem;
+  }
+
+  /* ─── SECTION: FOOTER / EXPERIENCE ─── */
+  .experience-section {
+    min-height: 80vh;
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 8vw 6vw;
+    position: relative;
+    overflow: hidden;
+    border-top: 1px solid rgba(200,169,106,0.1);
+  }
+
+  .exp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4vw;
+    margin-bottom: 6rem;
+  }
+
+  .exp-item-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(48px, 8vw, 100px);
+    line-height: 1;
+    color: rgba(240,235,224,0.07);
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+
+  .exp-item-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(18px, 2vw, 26px);
+    color: var(--cream);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  .exp-item-body {
+    font-size: clamp(14px, 1.2vw, 16px);
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .footer-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(240,235,224,0.08);
+  }
+
+  .footer-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--cream);
+  }
+
+  .footer-meta {
+    font-family: 'Syne Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ─── SCROLL FADE IN ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── PARALLAX TICKER ─── */
+  .ticker-wrap {
+    overflow: hidden;
+    border-top: 1px solid rgba(240,235,224,0.06);
+    border-bottom: 1px solid rgba(240,235,224,0.06);
+    padding: 1rem 0;
+    background: #0a0908;
+  }
+  .ticker {
+    display: flex;
+    white-space: nowrap;
+    animation: ticker 28s linear infinite;
+  }
+  .ticker-item {
+    font-family: 'Syne Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 3rem;
+    flex-shrink: 0;
+  }
+  .ticker-item span { color: var(--accent); margin: 0 0.5rem; }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ─── PARTICLE CANVAS ─── */
+  #particle-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 700px) {
+    .panels { grid-template-columns: 1fr; }
+    .exp-grid { grid-template-columns: 1fr; }
+    .panels::after { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg" id="hero-bg"></div>
+  <div class="hero-sub reveal" style="animation-delay:0.2s">What Screens Want</div>
+  <div class="hero-word" id="hero-word">
+    FLUX
+    <span class="glitch-layer" aria-hidden="true">FLUX</span>
+    <span class="glitch-layer2" aria-hidden="true">FLUX</span>
+  </div>
+  <div class="hero-desc reveal">
+    Screens aren't static. They move, shift, and respond — even when you don't.
+  </div>
+  <div class="scroll-hint">Scroll to experience</div>
+</section>
+
+<!-- ── TICKER ── -->
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker">
+    <div class="ticker-item">Flux <span>·</span> Change <span>·</span> Time <span>·</span> Motion <span>·</span> Shift <span>·</span> Screen <span>·</span> Experience <span>·</span> Ongoing <span>·</span> Respond <span>·</span></div>
+    <div class="ticker-item">Flux <span>·</span> Change <span>·</span> Time <span>·</span> Motion <span>·</span> Shift <span>·</span> Screen <span>·</span> Experience <span>·</span> Ongoing <span>·</span> Respond <span>·</span></div>
+    <div class="ticker-item">Flux <span>·</span> Change <span>·</span> Time <span>·</span> Motion <span>·</span> Shift <span>·</span> Screen <span>·</span> Experience <span>·</span> Ongoing <span>·</span> Respond <span>·</span></div>
+  </div>
+</div>
+
+<!-- ── PANELS ── -->
+<section class="panels">
+  <div class="panel panel--dark">
+    <div class="panel-number reveal">01 — The Premise</div>
+    <div class="panel-title reveal">Screens are never still.</div>
+    <p class="panel-body reveal">
+      Frank Chimero's <em>What Screens Want</em> opens with a provocation: the screen is not a canvas. It is a living surface, constantly in motion — even in silence.
+    </p>
+  </div>
+  <div class="panel panel--light">
+    <div class="panel-number reveal">02 — The Concept</div>
+    <div class="panel-title reveal">He calls it flux.</div>
+    <p class="panel-body reveal">
+      Flux is the quality of ceaseless, quiet change. Not dramatic transformation — but the slow, ongoing shift that happens between one moment and the next. Time passing through a screen.
+    </p>
+  </div>
+</section>
+
+<!-- ── LIVE CLOCK ── -->
+<section class="clock-section">
+  <div class="rings" aria-hidden="true">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+  </div>
+  <div class="clock-label reveal">Right now, the screen is changing</div>
+  <p class="clock-headline reveal">
+    You experience a screen across time — not all at once.
+  </p>
+  <div class="live-clock" id="clock" aria-live="polite">
+    <span id="ch">--</span><span class="colon">:</span><span id="cm">--</span><span class="colon">:</span><span id="cs">--</span>
+  </div>
+  <p class="clock-caption reveal">This moment has already passed. The screen continues.</p>
+</section>
+
+<!-- ── FLUX TEXT ── -->
+<section class="flux-section">
+  <div class="flux-eyebrow reveal">03 — The Experience</div>
+  <p class="flux-text reveal">
+    The screen <span class="morph-word" id="morph">moves</span> whether you watch or not.
+    It is always in the process of becoming <span class="morph-word" id="morph2">something else</span>.
+  </p>
+  <p class="flux-note reveal">
+    Chimero's insight is that designing for screens means designing for time — accepting that what you make will be seen differently in every moment it is viewed.
+  </p>
+</section>
+
+<!-- ── QUOTE ── -->
+<section class="quote-section">
+  <div class="quote-rule"></div>
+  <blockquote class="quote-text reveal">
+    Screens have flux. Digital things always have the quality of change. This is what makes them special.
+  </blockquote>
+  <div class="quote-attr reveal">Frank Chimero — What Screens Want</div>
+</section>
+
+<!-- ── EXPERIENCE GRID ── -->
+<section class="experience-section">
+  <div class="exp-grid">
+    <div class="reveal">
+      <div class="exp-item-num">01</div>
+      <div class="exp-item-title">Slow Change</div>
+      <p class="exp-item-body">Flux isn't sudden. It's the imperceptible drift — pixels shifting, states updating, time becoming visible through the surface of glass.</p>
+    </div>
+    <div class="reveal">
+      <div class="exp-item-num">02</div>
+      <div class="exp-item-title">Time as Medium</div>
+      <p class="exp-item-body">Unlike paint on canvas, screens exist in the fourth dimension. Duration is not a side effect — it is the material itself.</p>
+    </div>
+    <div class="reveal">
+      <div class="exp-item-num">03</div>
+      <div class="exp-item-title">Experience Over Glance</div>
+      <p class="exp-item-body">You cannot understand a screen in a single instant. To see it truly, you must stay — and let it change around you.</p>
+    </div>
+  </div>
+  <div class="footer-line">
+    <div class="footer-logo">FLUX</div>
+    <div class="footer-meta">After Frank Chimero · What Screens Want</div>
+  </div>
+</section>
+
+<script>
+// ── Cursor ──
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animCursor() {
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+// ── Live Clock ──
+function updateClock() {
+  const n = new Date();
+  const pad = v => String(v).padStart(2,'0');
+  document.getElementById('ch').textContent = pad(n.getHours());
+  document.getElementById('cm').textContent = pad(n.getMinutes());
+  document.getElementById('cs').textContent = pad(n.getSeconds());
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── Morphing words ──
+const words1 = ['moves','shifts','breathes','changes','responds','drifts','pulses'];
+const words2 = ['something else','what it was not','the next moment','a different form','itself, again'];
+let wi1 = 0, wi2 = 0;
+function morphWord(el, words, idx) {
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = words[idx];
+    el.style.opacity = '1';
+  }, 300);
+}
+setInterval(() => {
+  wi1 = (wi1 + 1) % words1.length;
+  morphWord(document.getElementById('morph'), words1, wi1);
+}, 2800);
+setInterval(() => {
+  wi2 = (wi2 + 1) % words2.length;
+  morphWord(document.getElementById('morph2'), words2, wi2);
+}, 3500);
+
+// ── Scroll reveal ──
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      e.target.style.transitionDelay = (i * 0.05) + 's';
+      e.target.classList.add('visible');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+reveals.forEach(el => io.observe(el));
+
+// ── Particle canvas ──
+const cv = document.getElementById('particle-canvas');
+const ctx = cv.getContext('2d');
+let W, H, particles = [];
+
+function resize() {
+  W = cv.width = window.innerWidth;
+  H = cv.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.size = Math.random() * 1.2 + 0.3;
+    this.speedX = (Math.random() - 0.5) * 0.15;
+    this.speedY = (Math.random() - 0.5) * 0.15;
+    this.opacity = Math.random() * 0.5 + 0.1;
+    this.life = Math.random() * 400 + 200;
+    this.age = 0;
+  }
+  update() {
+    this.x += this.speedX; this.y += this.speedY; this.age++;
+    if (this.age > this.life) this.reset();
+  }
+  draw() {
+    const a = this.age < 60 ? this.age/60 : this.age > this.life - 60 ? (this.life - this.age)/60 : 1;
+    ctx.globalAlpha = this.opacity * a;
+    ctx.fillStyle = '#c8a96a';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 120; i++) particles.push(new Particle());
+
+function animParticles() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animParticles);
+}
+animParticles();
+
+// ── Subtle hero parallax ──
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const hw = document.getElementById('hero-word');
+  if (hw) hw.style.transform = `translateY(${y * 0.18}px)`;
+});
+</script>
+</body>
+</html>

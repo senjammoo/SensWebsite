@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHROMAKEYS</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050508;
+    --grid: rgba(255,255,255,0.03);
+    --text: #e8e4dc;
+    --dim: rgba(232,228,220,0.3);
+    --accent: #f0f;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+    position: relative;
+  }
+
+  /* Grid background */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scan line effect */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,0.08) 3px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Canvas for particle effects */
+  #canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Header */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 40px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .logo span {
+    color: var(--accent);
+  }
+
+  .tagline {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  /* Center display */
+  #center {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+
+  #idle-msg {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: rgba(232,228,220,0.12);
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+
+  /* Last key display */
+  #key-display {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  #key-char {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(6rem, 20vw, 18rem);
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 60px currentColor, 0 0 120px currentColor;
+    transition: color 0.05s;
+  }
+
+  /* Note display */
+  #note-display {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  #note-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: var(--dim);
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  #freq-display {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(232,228,220,0.15);
+    margin-top: 4px;
+  }
+
+  /* Keyboard visualization */
+  #keyboard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    padding: 12px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .key-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .key {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+    transition: all 0.05s;
+    position: relative;
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(2px);
+  }
+
+  .key.active {
+    color: #fff;
+    border-color: currentColor;
+    box-shadow: 0 0 12px currentColor, inset 0 0 8px rgba(255,255,255,0.1);
+    transform: scale(0.93);
+  }
+
+  /* Color burst overlay */
+  #color-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease-out;
+    mix-blend-mode: screen;
+  }
+
+  /* Ripple container */
+  #ripples {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    animation: rippleOut 1.2s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+    mix-blend-mode: screen;
+  }
+
+  @keyframes rippleOut {
+    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+  }
+
+  /* History strip */
+  #history {
+    position: fixed;
+    top: 80px;
+    left: 40px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    pointer-events: none;
+  }
+
+  .history-note {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    opacity: 0;
+    animation: fadeNote 3s ease forwards;
+    text-transform: uppercase;
+  }
+
+  @keyframes fadeNote {
+    0%   { opacity: 0.9; transform: translateX(0); }
+    70%  { opacity: 0.5; }
+    100% { opacity: 0; transform: translateX(-8px); }
+  }
+
+  /* BPM / chord info */
+  #info-panel {
+    position: fixed;
+    top: 80px;
+    right: 40px;
+    z-index: 5;
+    text-align: right;
+    pointer-events: none;
+  }
+
+  .info-line {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  #keys-pressed-count {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: rgba(232,228,220,0.08);
+    letter-spacing: -0.02em;
+  }
+
+  /* Waveform bars */
+  #waveform {
+    position: fixed;
+    bottom: 110px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    z-index: 4;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    pointer-events: none;
+    padding: 0 20px;
+  }
+
+  .wave-bar {
+    width: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px 2px 0 0;
+    transition: height 0.1s ease, background 0.2s;
+    min-height: 2px;
+  }
+
+  /* Vignette */
+  .vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(5,5,8,0.85) 100%);
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  /* Description */
+  #description {
+    position: fixed;
+    bottom: 20px;
+    right: 40px;
+    z-index: 5;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    color: rgba(232,228,220,0.15);
+    text-transform: uppercase;
+    text-align: right;
+    line-height: 1.8;
+    max-width: 220px;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+<canvas id="canvas"></canvas>
+<div id="ripples"></div>
+<div id="color-overlay"></div>
+
+<header>
+  <div class="logo">CHROMA<span>KEYS</span></div>
+  <div class="tagline">every keystroke is a note &amp; a color</div>
+</header>
+
+<div id="center">
+  <div id="idle-msg">press any<br>key to play</div>
+</div>
+
+<div id="key-display">
+  <div id="key-char">A</div>
+</div>
+
+<div id="history"></div>
+
+<div id="info-panel">
+  <div class="info-line">total notes</div>
+  <div id="keys-pressed-count">0</div>
+</div>
+
+<div id="waveform"></div>
+
+<div id="note-display">
+  <div id="note-name">—</div>
+  <div id="freq-display">— Hz</div>
+</div>
+
+<div id="keyboard">
+  <div class="key-row" id="row1"></div>
+  <div class="key-row" id="row2"></div>
+  <div class="key-row" id="row3"></div>
+  <div class="key-row" id="row4"></div>
+</div>
+
+<div id="description">
+  A living instrument<br>built from your keyboard.<br>Each key — its own tone,<br>its own color, its own light.
+</div>
+
+<script>
+// ───────────────────────── KEY → NOTE & COLOR MAP ─────────────────────────
+
+const ROWS = [
+  ['1','2','3','4','5','6','7','8','9','0','-','='],
+  ['q','w','e','r','t','y','u','i','o','p','[',']'],
+  ['a','s','d','f','g','h','j','k','l',';',"'"],
+  ['z','x','c','v','b','n','m',',','.','/']
+];
+
+// Pentatonic-ish scale across keyboard for pleasing harmonics
+const NOTE_NAMES = ['C','D','E','G','A','C','D','E','G','A','C','D'];
+const OCTAVES_ROW = [3, 4, 5, 6];
+
+// Frequencies for notes
+function noteFreq(note, octave) {
+  const semitones = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+  const A4 = 440;
+  const n = semitones[note] + (octave - 4) * 12 - 9;
+  return A4 * Math.pow(2, n / 12);
+}
+
+const keyMap = {};
+let totalNotes = 0;
+
+ROWS.forEach((row, ri) => {
+  row.forEach((k, ci) => {
+    const noteIndex = ci % NOTE_NAMES.length;
+    const noteName = NOTE_NAMES[noteIndex];
+    const octave = OCTAVES_ROW[ri];
+    const freq = noteFreq(noteName, octave);
+    const hue = Math.round((ci / (row.length)) * 360 + ri * 30) % 360;
+    keyMap[k] = {
+      freq,
+      noteName: `${noteName}${octave}`,
+      hue,
+      color: `hsl(${hue}, 90%, 65%)`,
+      key: k
+    };
+  });
+});
+
+// ───────────────────────── BUILD KEYBOARD UI ──────────────────────────────
+ROWS.forEach((row, ri) => {
+  const rowEl = document.getElementById(`row${ri+1}`);
+  row.forEach(k => {
+    const el = document.createElement('div');
+    el.className = 'key';
+    el.textContent = k;
+    el.id = `key-${k}`;
+    rowEl.appendChild(el);
+  });
+});
+
+// ───────────────────────── WAVEFORM BARS ──────────────────────────────────
+const waveform = document.getElementById('waveform');
+const BAR_COUNT = 80;
+const bars = [];
+for (let i = 0; i < BAR_COUNT; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'wave-bar';
+  bar.style.height = '2px';
+  waveform.appendChild(bar);
+  bars.push(bar);
+}
+
+let waveAnimId;
+function animateWave(color) {
+  let frame = 0;
+  const animate = () => {
+    bars.forEach((b, i) => {
+      const h = Math.abs(Math.sin(frame * 0.12 + i * 0.4) * Math.sin(frame * 0.07 + i * 0.2) * 36) + 2;
+      b.style.height = h + 'px';
+      b.style.background = color;
+      b.style.opacity = 0.4 + Math.abs(Math.sin(i * 0.3 + frame * 0.1)) * 0.5;
+    });
+    frame++;
+    waveAnimId = requestAnimationFrame(animate);
+  };
+  if (waveAnimId) cancelAnimationFrame(waveAnimId);
+  animate();
+}
+
+// ───────────────────────── AUDIO ENGINE ───────────────────────────────────
+let audioCtx = null;
+const activeNodes = {};
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playNote(freq, color, hue) {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+
+  // Oscillator stack for rich synth sound
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const osc3 = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+  const filterNode = ctx.createBiquadFilter();
+  const reverbGain = ctx.createGain();
+
+  osc1.type = 'sawtooth';
+  osc2.type = 'square';
+  osc3.type = 'sine';
+
+  osc1.frequency.setValueAtTime(freq, now);
+  osc2.frequency.setValueAtTime(freq * 2.001, now); // slight detune
+  osc3.frequency.setValueAtTime(freq * 0.5, now);  // sub octave
+
+  filterNode.type = 'lowpass';
+  filterNode.frequency.setValueAtTime(800, now);
+  filterNode.frequency.exponentialRampToValueAtTime(3000, now + 0.1);
+  filterNode.frequency.exponentialRampToValueAtTime(400, now + 1.5);
+  filterNode.Q.setValueAtTime(4, now);
+
+  gainNode.gain.setValueAtTime(0, now);
+  gainNode.gain.linearRampToValueAtTime(0.18, now + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.1, now + 0.3);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+
+  osc1.connect(filterNode);
+  osc2.connect(filterNode);
+  osc3.connect(gainNode);
+  filterNode.connect(gainNode);
+  gainNode.connect(ctx.destination);
+
+  osc1.start(now);
+  osc2.start(now);
+  osc3.start(now);
+  osc1.stop(now + 2.5);
+  osc2.stop(now + 2.5);
+  osc3.stop(now + 2.5);
+
+  animateWave(color);
+}
+
+// ───────────────────────── CANVAS PARTICLES ───────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx2d = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+const particles = [];
+
+function spawnParticles(hue) {
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  const count = 60;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+    const speed = 2 + Math.random() * 8;
+    const size = 2 + Math.random() * 6;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size,
+      hue: hue + (Math.random() - 0.5) * 40,
+      life: 1,
+      decay: 0.012 + Math.random() * 0.02
+    });
+  }
+}
+
+function tickParticles() {
+  ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.97;
+    p.vy *= 0.97;
+    p.vy += 0.05;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    ctx2d.save();
+    ctx2d.globalAlpha = p.life * 0.8;
+    ctx2d.fillStyle = `hsl(${p.hue}, 90%, 65%)`;
+    ctx2d.shadowColor = `hsl(${p.hue}, 90%, 65%)`;
+    ctx2d.shadowBlur = 12;
+    ctx2d.beginPath();
+    ctx2d.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx2d.fill();
+    ctx2d.restore();
+  }
+  requestAnimationFrame(tickParticles);
+}
+tickParticles();
+
+// ───────────────────────── RIPPLE ─────────────────────────────────────────
+function spawnRipple(color) {
+  const el = document.createElement('div');
+  el.className = 'ripple';
+  const size = Math.min(window.innerWidth, window.innerHeight) * 1.8;
+  el.style.cssText = `
+    left: 50%; top: 50%;
+    width: ${size}px; height: ${size}px;
+    border: 2px solid ${color};
+    box-shadow: 0 0 20px ${color}, inset 0 0 20px ${color};
+  `;
+  document.getElementById('ripples').appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+
+  // Second smaller ripple offset
+  const el2 = document.createElement('div');
+  el2.className = 'ripple';
+  el2.style.cssText = `
+    left: 50%; top: 50%;
+    width: ${size * 0.6}px; height: ${size * 0.6}px;
+    border: 1px solid ${color};
+    animation-delay: 0.1s;
+    box-shadow: 0 0 10px ${color};
+  `;
+  document.getElementById('ripples').appendChild(el2);
+  setTimeout(() => el2.remove(), 1400);
+}
+
+// ───────────────────────── COLOR OVERLAY FLASH ────────────────────────────
+const overlay = document.getElementById('color-overlay');
+let overlayTimer;
+function flashOverlay(color) {
+  overlay.style.background = `radial-gradient(ellipse at center, ${color}22 0%, transparent 70%)`;
+  overlay.style.opacity = '1';
+  clearTimeout(overlayTimer);
+  overlayTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 100);
+}
+
+// ───────────────────────── UI UPDATES ─────────────────────────────────────
+const keyDisplay = document.getElementById('key-display');
+const keyChar = document.getElementById('key-char');
+const noteName = document.getElementById('note-name');
+const freqDisplay = document.getElementById('freq-display');
+const countEl = document.getElementById('keys-pressed-count');
+const idleMsg = document.getElementById('idle-msg');
+const historyEl = document.getElementById('history');
+
+let hideKeyTimer;
+
+function updateUI(info) {
+  // Big key char
+  keyChar.textContent = info.key.toUpperCase();
+  keyChar.style.color = info.color;
+  keyChar.style.textShadow = `0 0 40px ${info.color}, 0 0 120px ${info.color}`;
+  keyDisplay.style.opacity = '1';
+  idleMsg.style.opacity = '0';
+  clearTimeout(hideKeyTimer);
+  hideKeyTimer = setTimeout(() => {
+    keyDisplay.style.opacity = '0';
+  }, 600);
+
+  // Note + freq
+  noteName.textContent = info.noteName;
+  noteName.style.color = info.color;
+  freqDisplay.textContent = `${Math.round(info.freq)} Hz`;
+
+  // Count
+  countEl.textContent = totalNotes;
+
+  // Key highlight
+  const keyEl = document.getElementById(`key-${info.key}`);
+  if (keyEl) {
+    keyEl.classList.add('active');
+    keyEl.style.color = info.color;
+    keyEl.style.borderColor = info.color;
+    keyEl.style.boxShadow = `0 0 12px ${info.color}`;
+    setTimeout(() => {
+      keyEl.classList.remove('active');
+      keyEl.style.color = '';
+      keyEl.style.borderColor = '';
+      keyEl.style.boxShadow = '';
+    }, 300);
+  }
+
+  // History
+  const h = document.createElement('div');
+  h.className = 'history-note';
+  h.textContent = info.noteName;
+  h.style.color = info.color;
+  historyEl.prepend(h);
+  const notes = historyEl.querySelectorAll('.history-note');
+  if (notes.length > 8) notes[notes.length - 1].remove();
+}
+
+// ───────────────────────── EVENT LISTENERS ────────────────────────────────
+const pressedKeys = new Set();
+
+document.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  const key = e.key.toLowerCase();
+  if (!keyMap[key]) return;
+  if (pressedKeys.has(key)) return;
+  pressedKeys.add(key);
+
+  const info = keyMap[key];
+  totalNotes++;
+
+  playNote(info.freq, info.color, info.hue);
+  spawnParticles(info.hue);
+  spawnRipple(info.color);
+  flashOverlay(info.color);
+  updateUI(info);
+
+  // Body background pulse
+  document.body.style.background = `radial-gradient(ellipse at center, hsl(${info.hue},30%,8%) 0%, #050508 60%)`;
+  setTimeout(() => {
+    document.body.style.background = '';
+  }, 800);
+});
+
+document.addEventListener('keyup', (e) => {
+  pressedKeys.delete(e.key.toLowerCase());
+});
+
+// Touch / click on keyboard keys
+document.querySelectorAll('.key').forEach(keyEl => {
+  const trigger = () => {
+    const key = keyEl.textContent.toLowerCase();
+    if (!keyMap[key]) return;
+    const info = keyMap[key];
+    totalNotes++;
+    playNote(info.freq, info.color, info.hue);
+    spawnParticles(info.hue);
+    spawnRipple(info.color);
+    flashOverlay(info.color);
+    updateUI(info);
+  };
+  keyEl.addEventListener('click', trigger);
+  keyEl.addEventListener('touchstart', (e) => { e.preventDefault(); trigger(); });
+});
+</script>
+</body>
+</html>

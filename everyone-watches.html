@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Everyone Watches, Nobody Sees</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=Cormorant+Infant:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08070a;
+  --grid-line:rgba(255,255,255,0.04);
+  --fg:#f0ece4;
+  --muted:rgba(240,236,228,0.4);
+  --gold:#c9a96e;
+  --gold-dim:rgba(201,169,110,0.3);
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font-family:'Libre Baskerville',Georgia,serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── cursor ── */
+#cur{position:fixed;width:6px;height:6px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen}
+#cur-ring{position:fixed;width:30px;height:30px;border:1px solid rgba(201,169,110,0.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .15s ease,top .15s ease,width .2s,height .2s}
+body.hovering #cur-ring{width:48px;height:48px;border-color:rgba(201,169,110,0.7)}
+
+/* ── header ── */
+header{
+  padding:3rem 3rem 2rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem;
+  position:relative;
+  z-index:10;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  max-width:1400px;
+  margin:0 auto;
+}
+.h-eyebrow{
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.35em;
+  text-transform:uppercase;
+  color:var(--gold);
+}
+h1{
+  font-family:'Cormorant Infant',Georgia,serif;
+  font-size:clamp(28px,4.5vw,58px);
+  font-weight:300;
+  line-height:1.1;
+  letter-spacing:-0.01em;
+  color:var(--fg);
+}
+h1 em{font-style:italic;font-weight:300}
+.h-sub{
+  font-family:'Cormorant Infant',Georgia,serif;
+  font-size:clamp(13px,1.3vw,16px);
+  font-style:italic;
+  color:var(--muted);
+  max-width:520px;
+  line-height:1.65;
+  margin-top:0.3rem;
+}
+.h-right{
+  position:absolute;
+  right:3rem;
+  top:3rem;
+  text-align:right;
+}
+.counter{
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  color:var(--gold);
+  letter-spacing:0.15em;
+}
+.counter-num{font-size:20px;display:block;font-weight:300;margin-top:0.2rem}
+
+/* ── grid ── */
+.grid-wrap{
+  max-width:1400px;
+  margin:0 auto;
+  padding:2.5rem 2rem 2rem;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:3px;
+}
+@media(max-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+/* ── cell ── */
+.cell{
+  position:relative;
+  aspect-ratio:1;
+  overflow:hidden;
+  background:#0d0b10;
+  cursor:none;
+}
+.cell:hover .face-canvas{opacity:1!important;filter:none!important}
+.cell:hover .veil{opacity:0}
+.cell:hover .watch-dot{opacity:0}
+.cell:hover .name-tag{opacity:1;transform:translateY(0)}
+
+.face-canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  transition:opacity 0.55s ease, filter 0.55s ease;
+}
+
+/* surveillance veil */
+.veil{
+  position:absolute;
+  inset:0;
+  background:rgba(8,7,10,0.0);
+  transition:opacity 0.55s ease;
+  pointer-events:none;
+}
+
+/* the watching dot */
+.watch-dot{
+  position:absolute;
+  top:8px;right:8px;
+  width:5px;height:5px;
+  border-radius:50%;
+  background:rgba(201,169,110,0.5);
+  transition:opacity 0.3s;
+  pointer-events:none;
+  animation:dot-pulse 3s ease-in-out infinite;
+}
+@keyframes dot-pulse{
+  0%,100%{opacity:0.3;transform:scale(1)}
+  50%{opacity:0.8;transform:scale(1.3)}
+}
+
+/* name tag */
+.name-tag{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  padding:1.2rem 0.8rem 0.7rem;
+  background:linear-gradient(to top,rgba(8,7,10,0.9) 60%,transparent);
+  font-family:'Cormorant Infant',Georgia,serif;
+  font-size:clamp(10px,1.1vw,13px);
+  font-style:italic;
+  color:var(--fg);
+  opacity:0;
+  transform:translateY(6px);
+  transition:opacity 0.4s ease,transform 0.4s ease;
+  pointer-events:none;
+  letter-spacing:0.02em;
+  line-height:1.3;
+}
+.name-tag .word{
+  display:block;
+  font-family:'DM Mono',monospace;
+  font-size:8px;
+  font-style:normal;
+  letter-spacing:0.25em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:3px;
+}
+
+/* flicker */
+@keyframes flicker-hard{
+  0%{opacity:var(--start-op)}
+  48%{opacity:var(--start-op)}
+  50%{opacity:calc(var(--start-op)*0.15)}
+  52%{opacity:var(--start-op)}
+  100%{opacity:var(--end-op)}
+}
+
+/* ── grid lines overlay ── */
+.grid-wrap::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:100px 100px;
+  pointer-events:none;
+  z-index:1;
+}
+.grid-wrap{position:relative}
+.grid{position:relative;z-index:2}
+
+/* ── footer ── */
+footer{
+  max-width:1400px;
+  margin:0 auto;
+  padding:2.5rem 3rem 3rem;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  border-top:1px solid rgba(255,255,255,0.04);
+  gap:2rem;
+  flex-wrap:wrap;
+}
+.f-quote{
+  font-family:'Cormorant Infant',Georgia,serif;
+  font-size:clamp(15px,1.6vw,20px);
+  font-style:italic;
+  color:var(--muted);
+  max-width:500px;
+  line-height:1.6;
+}
+.f-quote strong{color:var(--fg);font-weight:400}
+.f-credit{
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  color:rgba(240,236,228,0.25);
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  text-align:right;
+  line-height:2;
+}
+
+/* ── scanline ── */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);
+  pointer-events:none;
+  z-index:100;
+}
+
+/* ── reveal animation ── */
+.cell{
+  opacity:0;
+  animation:cell-in 0.6s forwards ease-out;
+}
+@keyframes cell-in{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<header>
+  <div class="h-eyebrow">Interactive Digital Artwork · After Sydette Harry</div>
+  <h1>Everyone Watches,<br><em>Nobody Sees</em></h1>
+  <p class="h-sub">Thirty-six Black women flicker between visibility and erasure. Hover to see. To truly see — is a deliberate act.</p>
+  <div class="h-right">
+    <div class="counter">Seen <span class="counter-num" id="seen-count">0</span></div>
+  </div>
+</header>
+
+<div class="grid-wrap">
+  <div class="grid" id="grid"></div>
+</div>
+
+<footer>
+  <div class="f-quote">"Visibility without <strong>protection</strong> is not liberation — it is exposure."<br><span style="font-size:0.8em;color:var(--gold);font-family:'DM Mono',monospace;font-style:normal;letter-spacing:0.15em">— after Sydette Harry</span></div>
+  <div class="f-credit">Everyone Watches<br>Nobody Sees<br>2024</div>
+</footer>
+
+<script>
+// ── cursor ──
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function animCur(){
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+  rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;
+  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  requestAnimationFrame(animCur);
+})();
+
+// ── data: names & words ──
+const names=[
+  {name:'Adaeze',word:'radiant'},
+  {name:'Nkechi',word:'sovereign'},
+  {name:'Zora',word:'visionary'},
+  {name:'Amara',word:'eternal'},
+  {name:'Yewande',word:'knowing'},
+  {name:'Chiamaka',word:'brilliant'},
+  {name:'Fatou',word:'luminous'},
+  {name:'Imani',word:'faithful'},
+  {name:'Sanaa',word:'artful'},
+  {name:'Nia',word:'purposeful'},
+  {name:'Adanna',word:'beloved'},
+  {name:'Ebele',word:'merciful'},
+  {name:'Folake',word:'honoured'},
+  {name:'Ginika',word:'precious'},
+  {name:'Halima',word:'gentle'},
+  {name:'Ifeoma',word:'beautiful'},
+  {name:'Jumoke',word:'cherished'},
+  {name:'Kemi',word:'chosen'},
+  {name:'Lola',word:'rich'},
+  {name:'Morenike',word:'seen'},
+  {name:'Ngozi',word:'blessed'},
+  {name:'Obiageli',word:'resilient'},
+  {name:'Precious',word:'valued'},
+  {name:'Quiana',word:'silken'},
+  {name:'Remi',word:'joyful'},
+  {name:'Simisola',word:'rested'},
+  {name:'Titilayo',word:'eternal joy'},
+  {name:'Uloma',word:'beautiful mind'},
+  {name:'Vivienne',word:'alive'},
+  {name:'Wunmi',word:'beloved'},
+  {name:'Xola',word:'peace'},
+  {name:'Yetunde',word:'mother returns'},
+  {name:'Zainab',word:'fragrant'},
+  {name:'Abena',word:'born on tuesday'},
+  {name:'Bimpe',word:'adorned'},
+  {name:'Celestine',word:'heavenly'}
+];
+
+// ── face drawing ──
+// Rich variety: skin tones, face shapes, hairstyles, expressions
+const skinTones=[
+  '#3d1a08','#5c2e10','#7a3b14','#8b4513','#a0522d',
+  '#c68642','#d2691e','#b5651d','#6b3a2a','#4a2010',
+  '#2d1007','#8b6914','#704214','#5a3010','#3e1f0a'
+];
+const hairColors=['#0a0806','#1a1008','#0d0a06','#2a1a0a','#1a0a0a','#080608','#160e06'];
+const eyeColors=['#3d2b1a','#2a1a0a','#1a1208','#4a3020','#2d1a0a'];
+const lipColors=['#8b2252','#9b2d4a','#7a1a3a','#a0304a','#b03a50','#852040'];
+
+// Hair styles: 0=close crop, 1=afro, 2=locs/braids hanging, 3=updo/crown, 4=wrap, 5=braids back
+// Face shapes: 0=oval, 1=round, 2=heart, 3=square
+
+function drawFace(canvas,idx){
+  const c=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const cx=W/2,cy=H/2;
+  const rng=seededRng(idx*1337+17);
+  const r=()=>rng();
+
+  const skin=skinTones[Math.floor(r()*skinTones.length)];
+  const hair=hairColors[Math.floor(r()*hairColors.length)];
+  const eye=eyeColors[Math.floor(r()*eyeColors.length)];
+  const lip=lipColors[Math.floor(r()*lipColors.length)];
+  const hairStyle=Math.floor(r()*6);
+  const faceShape=Math.floor(r()*4);
+  const hasEarrings=r()<0.5;
+  const hasNecklace=r()<0.3;
+  const earringType=Math.floor(r()*3); // 0=stud,1=hoop,2=drop
+  const expression=Math.floor(r()*3); // 0=neutral,1=slight smile,2=strong
+
+  // bg — dark, slightly warm
+  const bgGrad=c.createRadialGradient(cx,cy*0.7,0,cx,cy,W*0.75);
+  bgGrad.addColorStop(0,'#1a1218');bgGrad.addColorStop(1,'#08070a');
+  c.fillStyle=bgGrad;c.fillRect(0,0,W,H);
+
+  // Neck
+  const fW=W*0.28,fH=H*0.48;
+  const faceTop=H*0.24;
+  const neckW=fW*0.38;
+  const neckX=cx-neckW/2;
+  const neckTop=faceTop+fH*0.82;
+  const neckBot=H+4;
+  c.fillStyle=skin;
+  c.fillRect(neckX,neckTop,neckW,neckBot-neckTop);
+
+  // Necklace
+  if(hasNecklace){
+    c.strokeStyle=r()<0.5?'#c9a96e':'#d4a0a0';
+    c.lineWidth=1.2;
+    c.beginPath();
+    c.arc(cx,neckTop+fH*0.08,neckW*0.55,0.1,Math.PI-0.1);
+    c.stroke();
+  }
+
+  // Shoulders suggestion
+  const shoulderY=H*0.88;
+  c.fillStyle=adjustBrightness(skin,-40);
+  c.beginPath();
+  c.moveTo(0,H);
+  c.lineTo(0,shoulderY);
+  c.quadraticCurveTo(cx*0.3,shoulderY-H*0.04,cx-neckW*0.8,neckBot-2);
+  c.lineTo(cx+neckW*0.8,neckBot-2);
+  c.quadraticCurveTo(W-cx*0.3,shoulderY-H*0.04,W,shoulderY);
+  c.lineTo(W,H);
+  c.closePath();
+  c.fill();
+
+  // Face shape
+  const ew=fW*(faceShape===1?1.1:faceShape===3?0.95:1);
+  const eh=fH*(faceShape===0?1:faceShape===2?1.05:0.95);
+  c.save();
+  c.shadowColor=adjustBrightness(skin,-60);
+  c.shadowBlur=W*0.08;c.shadowOffsetX=W*0.015;c.shadowOffsetY=H*0.02;
+  c.fillStyle=skin;
+  c.beginPath();
+  // custom face outline
+  if(faceShape===2){// heart
+    c.moveTo(cx,faceTop+eh*0.12);
+    c.bezierCurveTo(cx+ew*0.55,faceTop,cx+ew*0.6,faceTop+eh*0.35,cx+ew*0.5,faceTop+eh*0.5);
+    c.bezierCurveTo(cx+ew*0.45,faceTop+eh*0.7,cx+ew*0.1,faceTop+eh*0.88,cx,faceTop+eh*1.0);
+    c.bezierCurveTo(cx-ew*0.1,faceTop+eh*0.88,cx-ew*0.45,faceTop+eh*0.7,cx-ew*0.5,faceTop+eh*0.5);
+    c.bezierCurveTo(cx-ew*0.6,faceTop+eh*0.35,cx-ew*0.55,faceTop,cx,faceTop+eh*0.12);
+  } else {
+    c.ellipse(cx,faceTop+eh*0.5,ew*0.5,eh*0.5,0,0,Math.PI*2);
+  }
+  c.fill();
+  c.restore();
+
+  // Highlight on forehead
+  const hlGrad=c.createRadialGradient(cx-ew*0.1,faceTop+eh*0.15,0,cx,faceTop+eh*0.3,ew*0.4);
+  hlGrad.addColorStop(0,rgba(255,220,180,0.12));hlGrad.addColorStop(1,rgba(0,0,0,0));
+  c.fillStyle=hlGrad;c.beginPath();c.ellipse(cx,faceTop+eh*0.3,ew*0.4,eh*0.25,0,0,Math.PI*2);c.fill();
+
+  // Eyes
+  const eyeY=faceTop+eh*0.42;
+  const eyeSep=ew*0.29;
+  drawEye(c,cx-eyeSep,eyeY,ew*0.11,skin,eye,expression,r);
+  drawEye(c,cx+eyeSep,eyeY,ew*0.11,skin,eye,expression,r);
+
+  // Nose
+  const noseY=faceTop+eh*0.62;
+  const noseW=ew*0.14;
+  c.strokeStyle=adjustBrightness(skin,-35);
+  c.lineWidth=1.0;
+  c.beginPath();
+  c.moveTo(cx-noseW*0.3,noseY-eh*0.04);
+  c.quadraticCurveTo(cx-noseW*0.5,noseY+eh*0.04,cx-noseW*0.4,noseY+eh*0.03);
+  c.stroke();
+  c.beginPath();
+  c.moveTo(cx+noseW*0.3,noseY-eh*0.04);
+  c.quadraticCurveTo(cx+noseW*0.5,noseY+eh*0.04,cx+noseW*0.4,noseY+eh*0.03);
+  c.stroke();
+  // nostrils
+  c.fillStyle=adjustBrightness(skin,-45);
+  c.beginPath();c.ellipse(cx-noseW*0.38,noseY+eh*0.025,noseW*0.14,noseW*0.09,0,0,Math.PI*2);c.fill();
+  c.beginPath();c.ellipse(cx+noseW*0.38,noseY+eh*0.025,noseW*0.14,noseW*0.09,0,0,Math.PI*2);c.fill();
+
+  // Lips
+  const lipY=faceTop+eh*0.78;
+  const lipW=ew*0.28;
+  drawLips(c,cx,lipY,lipW,lip,expression);
+
+  // Ears
+  const earY=faceTop+eh*0.42;
+  const earW=ew*0.08;
+  const earH=eh*0.12;
+  [[cx-ew*0.5,earY],[cx+ew*0.5,earY]].forEach(([ex,ey],side)=>{
+    c.fillStyle=skin;
+    c.beginPath();c.ellipse(ex,ey,earW,earH,0,0,Math.PI*2);c.fill();
+    c.fillStyle=adjustBrightness(skin,-20);
+    c.beginPath();c.ellipse(ex,ey,earW*0.55,earH*0.6,0,0,Math.PI*2);c.fill();
+    // Earrings
+    if(hasEarrings){
+      const exOuter=side===0?ex-earW*0.6:ex+earW*0.6;
+      c.fillStyle='#c9a96e';
+      if(earringType===0){// stud
+        c.beginPath();c.arc(exOuter,ey,earW*0.35,0,Math.PI*2);c.fill();
+      } else if(earringType===1){// hoop
+        c.strokeStyle='#c9a96e';c.lineWidth=1.2;
+        c.beginPath();c.arc(exOuter,ey+earH*0.5,earW*0.55,0,Math.PI*2);c.stroke();
+      } else {// drop
+        c.strokeStyle='#c9a96e';c.lineWidth=0.8;
+        c.beginPath();c.moveTo(exOuter,ey);c.lineTo(exOuter,ey+earH*1.2);c.stroke();
+        c.fillStyle='#c9a96e';c.beginPath();c.ellipse(exOuter,ey+earH*1.4,earW*0.3,earW*0.45,0,0,Math.PI*2);c.fill();
+      }
+    }
+  });
+
+  // Cheek glow
+  c.fillStyle=rgba(180,80,80,0.06);
+  c.beginPath();c.ellipse(cx-ew*0.32,eyeY+eh*0.12,ew*0.18,eh*0.08,0,0,Math.PI*2);c.fill();
+  c.beginPath();c.ellipse(cx+ew*0.32,eyeY+eh*0.12,ew*0.18,eh*0.08,0,0,Math.PI*2);c.fill();
+
+  // Hair
+  drawHair(c,cx,faceTop,ew,eh,hair,hairStyle,r,W,H);
+}
+
+function drawEye(c,x,y,r,skin,eyeCol,expression,rng){
+  const brow=adjustBrightness(skin,-50);
+  const lidH=r*0.55;
+  // Eyebrow
+  c.strokeStyle=brow;c.lineWidth=r*0.5;c.lineCap='round';
+  const browY=y-r*1.1;
+  c.beginPath();c.moveTo(x-r*1.0,browY+r*0.1);c.quadraticCurveTo(x,browY-r*0.2,x+r*1.0,browY+r*0.1);c.stroke();
+  // white
+  c.fillStyle='#e8e0d8';
+  c.beginPath();c.ellipse(x,y,r*1.0,r*0.6,0,0,Math.PI*2);c.fill();
+  // iris
+  c.fillStyle=eyeCol;
+  c.beginPath();c.arc(x,y,r*0.55,0,Math.PI*2);c.fill();
+  // pupil
+  c.fillStyle='#0a0806';
+  c.beginPath();c.arc(x,y,r*0.3,0,Math.PI*2);c.fill();
+  // catchlight
+  c.fillStyle='rgba(255,255,255,0.75)';
+  c.beginPath();c.arc(x+r*0.12,y-r*0.15,r*0.1,0,Math.PI*2);c.fill();
+  // upper lid
+  c.fillStyle=adjustBrightness(skin,5);
+  c.beginPath();c.ellipse(x,y-r*0.25,r*1.0,r*0.38,0,0,Math.PI*2);c.fill();
+  // lash line
+  c.strokeStyle='#1a0a08';c.lineWidth=r*0.2;
+  c.beginPath();c.moveTo(x-r,y);c.quadraticCurveTo(x,y-r*0.7,x+r,y);c.stroke();
+}
+
+function drawLips(c,x,y,w,col,expression){
+  const h=w*0.28;
+  // upper lip
+  c.fillStyle=col;
+  c.beginPath();
+  c.moveTo(x-w*0.5,y);
+  c.bezierCurveTo(x-w*0.35,y-h*0.8,x-w*0.12,y-h,x,y-h*0.5);
+  c.bezierCurveTo(x+w*0.12,y-h,x+w*0.35,y-h*0.8,x+w*0.5,y);
+  c.bezierCurveTo(x+w*0.3,y-h*0.15,x-w*0.3,y-h*0.15,x-w*0.5,y);
+  c.fill();
+  // lower lip
+  c.fillStyle=adjustBrightness(col,15);
+  c.beginPath();
+  const smileOff=expression===1?h*0.15:expression===2?h*0.3:0;
+  c.moveTo(x-w*0.5,y+smileOff);
+  c.bezierCurveTo(x-w*0.3,y+h*0.9+smileOff,x+w*0.3,y+h*0.9+smileOff,x+w*0.5,y+smileOff);
+  c.bezierCurveTo(x+w*0.3,y+h*0.1,x-w*0.3,y+h*0.1,x-w*0.5,y+smileOff);
+  c.fill();
+  // highlight
+  c.fillStyle='rgba(255,255,255,0.1)';
+  c.beginPath();c.ellipse(x,y+h*0.5,w*0.18,h*0.22,0,0,Math.PI*2);c.fill();
+  // part line
+  c.strokeStyle=adjustBrightness(col,-25);c.lineWidth=0.7;
+  c.beginPath();c.moveTo(x-w*0.42,y+smileOff*0.3);c.lineTo(x+w*0.42,y+smileOff*0.3);c.stroke();
+}
+
+function drawHair(c,cx,faceTop,ew,eh,hair,style,r,W,H){
+  c.fillStyle=hair;
+  if(style===0){// close crop
+    c.beginPath();c.ellipse(cx,faceTop+eh*0.1,ew*0.52,eh*0.32,0,0,Math.PI);c.fill();
+    // texture dots
+    c.fillStyle=adjustBrightness(hair,15);
+    for(let i=0;i<60;i++){
+      const tx=cx+(r()-0.5)*ew,ty=faceTop+r()*eh*0.22;
+      c.beginPath();c.arc(tx,ty,0.8,0,Math.PI*2);c.fill();
+    }
+  } else if(style===1){// afro
+    const aR=ew*0.78;
+    c.beginPath();c.arc(cx,faceTop+eh*0.1,aR,Math.PI,0);c.fill();
+    // volume texture
+    c.fillStyle=adjustBrightness(hair,12);
+    for(let i=0;i<120;i++){
+      const a=r()*Math.PI,dist=aR*(0.5+r()*0.5);
+      const tx=cx+Math.cos(a)*dist,ty=faceTop+eh*0.1-Math.sin(a)*dist;
+      if(ty<faceTop+eh*0.1+5){
+        c.beginPath();c.arc(tx,ty,r()*2.5+0.5,0,Math.PI*2);c.fill();
+      }
+    }
+  } else if(style===2){// locs/braids hanging
+    c.beginPath();c.ellipse(cx,faceTop+eh*0.08,ew*0.52,eh*0.28,0,Math.PI,0);c.fill();
+    // hanging locs
+    const numLocs=10+Math.floor(r()*6);
+    for(let i=0;i<numLocs;i++){
+      const lx=cx-ew*0.5+i*(ew/numLocs)+r()*8;
+      const lLen=H*0.25+r()*H*0.3;
+      const ctrl1x=lx+(r()-0.5)*20,ctrl1y=faceTop+eh*0.4;
+      const ctrl2x=lx+(r()-0.5)*30,ctrl2y=faceTop+lLen*0.6;
+      c.strokeStyle=adjustBrightness(hair,r()*20);
+      c.lineWidth=3+r()*3;c.lineCap='round';
+      c.beginPath();c.moveTo(lx,faceTop+eh*0.08);
+      c.bezierCurveTo(ctrl1x,ctrl1y,ctrl2x,ctrl2y,lx+(r()-0.5)*20,faceTop+lLen);
+      c.stroke();
+    }
+  } else if(style===3){// updo/crown
+    // crown bun
+    const bunR=ew*0.32;
+    c.beginPath();c.arc(cx,faceTop-bunR*0.3,bunR,0,Math.PI*2);c.fill();
+    // sides
+    c.beginPath();c.ellipse(cx,faceTop+eh*0.08,ew*0.52,eh*0.22,0,Math.PI,0);c.fill();
+    // texture
+    c.strokeStyle=adjustBrightness(hair,20);c.lineWidth=0.8;
+    for(let i=0;i<8;i++){
+      const a=i/8*Math.PI*2;
+      c.beginPath();c.moveTo(cx,faceTop-bunR*0.3);
+      c.lineTo(cx+Math.cos(a)*bunR*0.85,faceTop-bunR*0.3+Math.sin(a)*bunR*0.85);
+      c.stroke();
+    }
+  } else if(style===4){// head wrap
+    const wrapColors=['#8b1a1a','#1a3a8b','#1a6b1a','#6b1a6b','#8b6b1a'];
+    const wc=wrapColors[Math.floor(r()*wrapColors.length)];
+    c.fillStyle=wc;
+    c.beginPath();c.ellipse(cx,faceTop+eh*0.04,ew*0.58,eh*0.35,0,Math.PI,0);c.fill();
+    // wrap top knot
+    c.beginPath();c.ellipse(cx,faceTop-eh*0.12,ew*0.28,eh*0.18,0,0,Math.PI*2);c.fill();
+    // wrap folds
+    c.strokeStyle=adjustBrightness(wc,-30);c.lineWidth=1.2;
+    for(let i=0;i<5;i++){
+      c.beginPath();
+      c.arc(cx,faceTop+eh*0.04,ew*(0.3+i*0.05),Math.PI+0.2,Math.PI*2-0.2);
+      c.stroke();
+    }
+  } else {// braids back
+    c.beginPath();c.ellipse(cx,faceTop+eh*0.06,ew*0.52,eh*0.24,0,Math.PI,0);c.fill();
+    // braids
+    const nb=8+Math.floor(r()*5);
+    for(let i=0;i<nb;i++){
+      const bx=cx-ew*0.45+i*(ew*0.9/nb);
+      c.strokeStyle=adjustBrightness(hair,r()*15);c.lineWidth=2.5;
+      c.beginPath();c.moveTo(bx,faceTop+eh*0.04);
+      // zigzag braid effect
+      let cy2=faceTop+eh*0.04;
+      while(cy2<H*0.9){
+        c.lineTo(bx+3,cy2+10);c.lineTo(bx-3,cy2+20);cy2+=20;
+      }
+      c.stroke();
+    }
+  }
+}
+
+// ── seeded RNG ──
+function seededRng(seed){
+  let s=seed;
+  return function(){
+    s=(s*1664525+1013904223)&0xffffffff;
+    return (s>>>0)/0xffffffff;
+  };
+}
+function adjustBrightness(hex,amt){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  const nr=Math.max(0,Math.min(255,r+amt)),ng=Math.max(0,Math.min(255,g+amt)),nb=Math.max(0,Math.min(255,b+amt));
+  return '#'+[nr,ng,nb].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function rgba(r,g,b,a){return `rgba(${r},${g},${b},${a})`}
+
+// ── build grid ──
+const grid=document.getElementById('grid');
+const seenCount=document.getElementById('seen-count');
+const total=36;
+let seenSet=new Set();
+
+for(let i=0;i<total;i++){
+  const cell=document.createElement('div');
+  cell.className='cell';
+  cell.style.animationDelay=(i*0.04)+'s';
+
+  const canvas=document.createElement('canvas');
+  canvas.className='face-canvas';
+  canvas.width=300;canvas.height=300;
+
+  // flicker behavior: each face has its own visibility rhythm
+  const rng=seededRng(i*999+3);
+  const baseOpacity=0.08+rng()*0.28; // some very hidden, some less so
+  const flickerDur=(4+rng()*10).toFixed(1)+'s';
+  const flickerDelay=(rng()*8).toFixed(1)+'s';
+  canvas.style.opacity=baseOpacity;
+  canvas.style.filter=`grayscale(${60+rng()*40}%) brightness(${0.5+rng()*0.4})`;
+  canvas.style.animation=`flicker-hard ${flickerDur} ${flickerDelay} ease-in-out infinite`;
+  canvas.style.setProperty('--start-op',baseOpacity);
+  canvas.style.setProperty('--end-op',baseOpacity*(0.4+rng()*0.6));
+
+  const veil=document.createElement('div');
+  veil.className='veil';
+
+  const dot=document.createElement('div');
+  dot.className='watch-dot';
+  dot.style.animationDelay=(rng()*3)+'s';
+
+  const nameTag=document.createElement('div');
+  nameTag.className='name-tag';
+  const d=names[i];
+  nameTag.innerHTML=`<span class="word">${d.word}</span>${d.name}`;
+
+  cell.appendChild(canvas);
+  cell.appendChild(veil);
+  cell.appendChild(dot);
+  cell.appendChild(nameTag);
+  grid.appendChild(cell);
+
+  // Draw face (deferred so layout is first)
+  setTimeout(()=>drawFace(canvas,i),i*20);
+
+  // Hover tracking
+  cell.addEventListener('mouseenter',()=>{
+    document.body.classList.add('hovering');
+    if(!seenSet.has(i)){
+      seenSet.add(i);
+      seenCount.textContent=seenSet.size;
+      seenCount.style.color='#c9a96e';
+      setTimeout(()=>seenCount.style.color='',600);
+    }
+  });
+  cell.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
+}
+</script>
+</body>
+</html>

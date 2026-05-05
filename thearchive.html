@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the archive — black creative infrastructure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;1,300&family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --offwhite: #f0ebe3;
+    --cream: #e8e1d5;
+    --gold: #c9a84c;
+    --red: #c0392b;
+    --faded: #7a7060;
+    --tag-bg: #1a1a1a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--offwhite);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    min-height: 100vh;
+    cursor: crosshair;
+  }
+
+  /* grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.35;
+  }
+
+  header {
+    padding: 3rem 3rem 2rem;
+    border-bottom: 1px solid #222;
+    position: sticky;
+    top: 0;
+    background: var(--black);
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .site-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--offwhite);
+  }
+
+  .site-title span {
+    color: var(--gold);
+  }
+
+  .site-sub {
+    font-size: 11px;
+    color: var(--faded);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-style: italic;
+    max-width: 300px;
+    text-align: right;
+  }
+
+  /* tag filter row */
+  .tag-bar {
+    padding: 1rem 3rem;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .tag-label {
+    font-size: 10px;
+    color: var(--faded);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-right: 0.5rem;
+  }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border: 1px solid #333;
+    color: var(--faded);
+    background: transparent;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s ease;
+    text-transform: lowercase;
+    border-radius: 0;
+  }
+
+  .tag:hover, .tag.active {
+    color: var(--offwhite);
+    border-color: var(--gold);
+    background: transparent;
+  }
+
+  .tag.active {
+    color: var(--gold);
+  }
+
+  /* main grid */
+  main {
+    padding: 0 3rem;
+  }
+
+  .entry {
+    padding: 2.5rem 0;
+    border-bottom: 1px solid #161616;
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 2rem;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.5s ease forwards;
+    transition: opacity 0.3s;
+  }
+
+  .entry.hidden {
+    display: none;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .entry:nth-child(1)  { animation-delay: 0.05s; }
+  .entry:nth-child(2)  { animation-delay: 0.10s; }
+  .entry:nth-child(3)  { animation-delay: 0.15s; }
+  .entry:nth-child(4)  { animation-delay: 0.20s; }
+  .entry:nth-child(5)  { animation-delay: 0.25s; }
+  .entry:nth-child(6)  { animation-delay: 0.30s; }
+  .entry:nth-child(7)  { animation-delay: 0.35s; }
+  .entry:nth-child(8)  { animation-delay: 0.40s; }
+  .entry:nth-child(9)  { animation-delay: 0.45s; }
+  .entry:nth-child(10) { animation-delay: 0.50s; }
+  .entry:nth-child(11) { animation-delay: 0.55s; }
+  .entry:nth-child(12) { animation-delay: 0.60s; }
+
+  .entry-meta {
+    padding-top: 4px;
+  }
+
+  .entry-year {
+    font-size: 11px;
+    color: var(--faded);
+    display: block;
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .entry-tags-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .entry-tag {
+    font-size: 10px;
+    color: var(--faded);
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .entry-tag:hover {
+    color: var(--gold);
+  }
+
+  .entry-body h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
+    color: var(--offwhite);
+    transition: color 0.2s;
+  }
+
+  .entry-body h2 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .entry:hover .entry-body h2 {
+    color: var(--cream);
+  }
+
+  .entry-desc {
+    color: var(--faded);
+    font-size: 12px;
+    line-height: 1.75;
+    max-width: 640px;
+    font-style: italic;
+  }
+
+  .entry-desc strong {
+    color: var(--offwhite);
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  /* accent bar — colored left border per category feel */
+  .entry[data-primary="music"]    { border-left: 2px solid #c9a84c22; padding-left: 1.5rem; }
+  .entry[data-primary="film"]     { border-left: 2px solid #c0392b22; padding-left: 1.5rem; }
+  .entry[data-primary="fashion"]  { border-left: 2px solid #3a7bd522; padding-left: 1.5rem; }
+  .entry[data-primary="internet"] { border-left: 2px solid #2ecc7122; padding-left: 1.5rem; }
+  .entry[data-primary="space"]    { border-left: 2px solid #9b59b622; padding-left: 1.5rem; }
+  .entry[data-primary="community"]{ border-left: 2px solid #e67e2222; padding-left: 1.5rem; }
+
+  .entry[data-primary="music"]:hover    { border-left-color: var(--gold); }
+  .entry[data-primary="film"]:hover     { border-left-color: var(--red); }
+  .entry[data-primary="fashion"]:hover  { border-left-color: #3a7bd5; }
+  .entry[data-primary="internet"]:hover { border-left-color: #2ecc71; }
+  .entry[data-primary="space"]:hover    { border-left-color: #9b59b6; }
+  .entry[data-primary="community"]:hover{ border-left-color: #e67e22; }
+
+  footer {
+    padding: 3rem;
+    border-top: 1px solid #1a1a1a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  footer p {
+    font-size: 10px;
+    color: #333;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  footer a {
+    color: var(--faded);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    font-size: 10px;
+    text-transform: uppercase;
+    transition: color 0.15s;
+  }
+
+  footer a:hover { color: var(--gold); }
+
+  /* marquee strip */
+  .marquee-wrap {
+    overflow: hidden;
+    border-top: 1px solid #1a1a1a;
+    border-bottom: 1px solid #1a1a1a;
+    padding: 0.5rem 0;
+    background: #0d0d0d;
+  }
+
+  .marquee-track {
+    display: flex;
+    white-space: nowrap;
+    animation: marquee 40s linear infinite;
+    gap: 0;
+  }
+
+  .marquee-track span {
+    font-size: 10px;
+    color: #2a2a2a;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0 2rem;
+    flex-shrink: 0;
+  }
+
+  .marquee-track span.lit {
+    color: var(--gold);
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  @media (max-width: 600px) {
+    header, main, .tag-bar, footer { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .entry { grid-template-columns: 1fr; gap: 0.5rem; }
+    .entry-meta { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    .entry-tags-list { flex-direction: row; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="site-title">the <span>archive</span></div>
+  </div>
+  <div class="site-sub">a living document of black creative infrastructure — music, fashion, film, internet, space, community</div>
+</header>
+
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>sample culture</span><span class="lit">✦</span>
+    <span>chitlin circuit</span><span class="lit">✦</span>
+    <span>black twitter</span><span class="lit">✦</span>
+    <span>ballroom</span><span class="lit">✦</span>
+    <span>vhs aesthetics</span><span class="lit">✦</span>
+    <span>independent labels</span><span class="lit">✦</span>
+    <span>the dozens</span><span class="lit">✦</span>
+    <span>barbershop culture</span><span class="lit">✦</span>
+    <span>soul train</span><span class="lit">✦</span>
+    <span>zine culture</span><span class="lit">✦</span>
+    <span>sample culture</span><span class="lit">✦</span>
+    <span>chitlin circuit</span><span class="lit">✦</span>
+    <span>black twitter</span><span class="lit">✦</span>
+    <span>ballroom</span><span class="lit">✦</span>
+    <span>vhs aesthetics</span><span class="lit">✦</span>
+    <span>independent labels</span><span class="lit">✦</span>
+    <span>the dozens</span><span class="lit">✦</span>
+    <span>barbershop culture</span><span class="lit">✦</span>
+    <span>soul train</span><span class="lit">✦</span>
+    <span>zine culture</span><span class="lit">✦</span>
+  </div>
+</div>
+
+<div class="tag-bar">
+  <span class="tag-label">filter —</span>
+  <button class="tag active" data-filter="all">all</button>
+  <button class="tag" data-filter="music">music</button>
+  <button class="tag" data-filter="film">film</button>
+  <button class="tag" data-filter="fashion">fashion</button>
+  <button class="tag" data-filter="internet">internet</button>
+  <button class="tag" data-filter="space">space</button>
+  <button class="tag" data-filter="community">community</button>
+</div>
+
+<main id="entries">
+
+  <div class="entry" data-primary="music" data-tags="music,community,performance">
+    <div class="entry-meta">
+      <span class="entry-year">[1930s–1960s]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="music">music</span>
+        <span class="entry-tag" data-filter="community">community</span>
+        <span class="entry-tag" data-filter="performance">performance</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2>the <em>chitlin circuit</em></h2>
+      <p class="entry-desc">A network of performance venues across the American South and beyond that were safe and welcoming to Black artists during segregation. <strong>Not a workaround — a world.</strong> The circuit incubated James Brown, Little Richard, B.B. King, and the architecture of American popular music. Built entirely outside white institutional support.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="music" data-tags="music,technology,community">
+    <div class="entry-meta">
+      <span class="entry-year">[1973–present]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="music">music</span>
+        <span class="entry-tag" data-filter="community">community</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2><em>sample culture</em> and the turntable as instrument</h2>
+      <p class="entry-desc">DJ Kool Herc's isolation of the breakbeat in the South Bronx created the technical and philosophical foundation of hip-hop. <strong>Sampling reframed existing recordings as raw material</strong> — a radical act of creative ownership and historical dialogue. Every producer who ever chopped a record descends from this room, this night, this block party.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="film" data-tags="film,community">
+    <div class="entry-meta">
+      <span class="entry-year">[1986–1994]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="film">film</span>
+        <span class="entry-tag" data-filter="community">community</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2>the <em>LA rebellion</em> and new black cinema</h2>
+      <p class="entry-desc">Spike Lee, John Singleton, Julie Dash, the Hughes Brothers — a generation of Black filmmakers who seized narrative control. <strong>Do the Right Thing (1989). Daughters of the Dust (1991). Boyz n the Hood (1991).</strong> These films did not explain Black life to white audiences. They documented it on its own terms, in its own language.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="fashion" data-tags="fashion,community,performance">
+    <div class="entry-meta">
+      <span class="entry-year">[1960s–present]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="fashion">fashion</span>
+        <span class="entry-tag" data-filter="community">community</span>
+        <span class="entry-tag" data-filter="performance">performance</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2><em>ballroom culture</em></h2>
+      <p class="entry-desc">Originating in Harlem's Black and Latino queer communities, ballroom created a complete alternative world: <strong>Houses as family structures, runways as competitive arenas, voguing as a physical language</strong> of defiance and beauty. Invented categories (realness, face, body) that the mainstream has spent decades trying and failing to fully commodify.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="community" data-tags="community,music,performance">
+    <div class="entry-meta">
+      <span class="entry-year">[1971–2006]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="community">community</span>
+        <span class="entry-tag" data-filter="music">music</span>
+        <span class="entry-tag" data-filter="performance">performance</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2><em>Soul Train</em> — the hippest trip in America</h2>
+      <p class="entry-desc">Don Cornelius built a nationally syndicated television platform for Black music and dance at a time when such a platform had no reason to exist outside his belief that it should. <strong>35 years, 1,117 episodes.</strong> Aretha. Marvin. Whitney. Prince. The show was never about access to white audiences — it was about Black joy, documented weekly, on television, without apology.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="internet" data-tags="internet,community">
+    <div class="entry-meta">
+      <span class="entry-year">[2006–2022]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="internet">internet</span>
+        <span class="entry-tag" data-filter="community">community</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2><em>Black Twitter</em></h2>
+      <p class="entry-desc">A distributed, leaderless cultural force that broke news, ended careers, launched movements, and set the terms of American cultural discourse for over a decade. <strong>#BlackLivesMatter. #OscarsSoWhite. #MeToo.</strong> Not a platform — a practice. The internet's most powerful editorial board, operating entirely without institutional power, through collective wit and moral clarity.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="music" data-tags="music,community,technology">
+    <div class="entry-meta">
+      <span class="entry-year">[1980s–present]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="music">music</span>
+        <span class="entry-tag" data-filter="community">community</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2>independent Black <em>labels and distribution</em></h2>
+      <p class="entry-desc">From Sugar Hill Records to Death Row to Roc Nation — the ongoing project of Black-owned music infrastructure. <strong>Ownership as liberation.</strong> Def Jam (founded 1984) changed who could tell what stories. Motown before it. Cash Money. Top Dawg Entertainment. Each label a bet that Black creative sovereignty was commercially viable and culturally necessary.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="fashion" data-tags="fashion,community">
+    <div class="entry-meta">
+      <span class="entry-year">[1990s–present]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="fashion">fashion</span>
+        <span class="entry-tag" data-filter="community">community</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2>streetwear and <em>Black fashion vernacular</em></h2>
+      <p class="entry-desc">Dapper Dan remixing luxury logos in Harlem before luxury brands acknowledged him. <strong>The hoodie, the Timberland, the fitted cap</strong> — garments transformed into cultural signifiers. Hip-hop fashion as a complete visual language developed entirely outside fashion institutions, then absorbed by them, then reclaimed again. The cycle continues.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="community" data-tags="community,film">
+    <div class="entry-meta">
+      <span class="entry-year">[1900s–present]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="community">community</span>
+        <span class="entry-tag" data-filter="film">film</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2>the <em>barbershop</em> as institution</h2>
+      <p class="entry-desc">Information hub, debate floor, therapy room, comedy stage. The Black barbershop has functioned as <strong>civic infrastructure</strong> in communities systematically excluded from other civic spaces. A place where the dozens sharpened wit, where politics were argued, where identity was constructed and performed. Documented in film, preserved in culture, irreplaceable in function.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="space" data-tags="space,community,technology">
+    <div class="entry-meta">
+      <span class="entry-year">[1960s–present]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="space">space</span>
+        <span class="entry-tag" data-filter="community">community</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2><em>Afrofuturism</em> — the architecture of possibility</h2>
+      <p class="entry-desc">Sun Ra, Octavia Butler, Parliament-Funkadelic, Janelle Monáe — a tradition of Black artists <strong>claiming science fiction and speculative futures</strong> as explicitly Black terrain. Not escapism but survival technology: if the present cannot hold you, build a future that can. The Mothership as liberation vehicle. Space as the place beyond the reach of the plantation.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="internet" data-tags="internet,community,film">
+    <div class="entry-meta">
+      <span class="entry-year">[2012–present]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="internet">internet</span>
+        <span class="entry-tag" data-filter="film">film</span>
+        <span class="entry-tag" data-filter="community">community</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2>Black <em>independent media</em> and the YouTube generation</h2>
+      <p class="entry-desc">Issa Rae's <em>Awkward Black Girl</em> (2011) proved a web series could build an audience, a career, and a creative infrastructure outside Hollywood entirely. <strong>Rooted in community, distributed through platforms, owned by the creator.</strong> A model replicated thousands of times across YouTube, Patreon, Substack — the ongoing project of building media that doesn't require permission.</p>
+    </div>
+  </div>
+
+  <div class="entry" data-primary="community" data-tags="community,music">
+    <div class="entry-meta">
+      <span class="entry-year">[ongoing]</span>
+      <div class="entry-tags-list">
+        <span class="entry-tag" data-filter="community">community</span>
+        <span class="entry-tag" data-filter="music">music</span>
+      </div>
+    </div>
+    <div class="entry-body">
+      <h2>the <em>Black church</em> as creative laboratory</h2>
+      <p class="entry-desc">Gospel music is the root system of American popular music — its vocal techniques, its emotional register, its call-and-response structure. <strong>Aretha Franklin. Sam Cooke. Whitney Houston. Kirk Franklin.</strong> The church as the first venue, the first audience, the first record label. A creative institution that trained generations before any secular industry acknowledged them.</p>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>the archive — an ongoing document</p>
+  <div style="display:flex;gap:2rem;">
+    <a href="#">about</a>
+    <a href="#">contribute</a>
+    <a href="#">rss</a>
+  </div>
+</footer>
+
+<script>
+  // Tag filtering
+  const filterBtns = document.querySelectorAll('.tag[data-filter]');
+  const entries = document.querySelectorAll('.entry');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      entries.forEach(entry => {
+        if (filter === 'all') {
+          entry.classList.remove('hidden');
+        } else {
+          const tags = entry.dataset.tags || '';
+          if (tags.includes(filter)) {
+            entry.classList.remove('hidden');
+          } else {
+            entry.classList.add('hidden');
+          }
+        }
+      });
+    });
+  });
+
+  // Entry tag clicks also filter
+  document.querySelectorAll('.entry-tag').forEach(tag => {
+    tag.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const filter = tag.dataset.filter;
+      const matchBtn = document.querySelector(`.tag[data-filter="${filter}"]`);
+      if (matchBtn) matchBtn.click();
+    });
+  });
+</script>
+</body>
+</html>
