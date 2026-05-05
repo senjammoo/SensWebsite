@@ -243,6 +243,7 @@
       color: var(--rose);
     }
 
+    /* ── EXERCISES ── */
     .exercises {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -277,13 +278,145 @@
       background: var(--cream);
     }
 
+    /* ── VIBE CODE GRID ── */
     .vibe-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 24px;
       margin-top: 8px;
     }
 
+    /* Vibe card with embed (p5.js) */
+    .vibe-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      transition: transform 0.25s ease;
+    }
+
+    .vibe-item:hover { transform: scale(1.02); }
+
+    .vibe-item iframe {
+      width: 100%;
+      height: 180px;
+      border: 1px solid var(--dust);
+      border-radius: 4px 4px 0 0;
+      background: var(--cream);
+      display: block;
+    }
+
+    .vibe-item-meta {
+      border: 1px solid var(--dust);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 14px 16px 16px;
+      background: var(--cream);
+    }
+
+    .vibe-item-meta .vibe-session {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--rose);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .vibe-item-meta a {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--brown);
+      text-decoration: none;
+      border-bottom: 1px solid var(--dust);
+      transition: color 0.2s, border-color 0.2s;
+      display: inline;
+    }
+
+    .vibe-item-meta a:hover { color: var(--rose); border-color: var(--rose); }
+
+    .vibe-item-meta p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    /* Vibe card link-only (claude.ai artifacts) */
+    .vibe-link-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      border: 1px solid var(--dust);
+      border-radius: 4px;
+      background: var(--cream);
+      transition: all 0.3s ease;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .vibe-link-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(196,149,122,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .vibe-link-card:hover {
+      border-color: var(--rose);
+      transform: scale(1.02);
+      box-shadow: 0 6px 24px rgba(59,42,26,0.07);
+    }
+
+    .vibe-link-card-inner {
+      padding: 24px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .vibe-link-card .vibe-session {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--rose);
+    }
+
+    .vibe-link-card .vibe-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--brown);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .vibe-link-card .vibe-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    .vibe-link-card .vibe-cta {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dust);
+      margin-top: 10px;
+      transition: color 0.2s;
+    }
+
+    .vibe-link-card:hover .vibe-cta { color: var(--rose); }
+
+    /* Coming soon placeholder */
     .vibe-placeholder {
       border: 1px dashed var(--dust);
       border-radius: 4px;
@@ -379,8 +512,8 @@
       <p class="project-desc">POLARIS is a personal web narrative about finding your way through a dark moment. My freshman year, me and my friends were racially profiled and accused of a student conduct violation over a nerf gun — weapons charges, academic probation, a flag on our records. POLARIS walks through that journey in four chapters: Darkness, Distance, Light, and Return. Designed to feel like drifting through space, slowly finding your north star. Community got me through it. This project is my way of turning that into something people can actually feel.</p>
 
       <h3>Project 3 — Networked Care</h3>
-      <a class="project-link" href="" target="_blank">Final: Coming Soon</a>
-      <p class="project-desc">In progress — check back soon.</p>
+      <a class="project-link" href="https://senjammoo.github.io/project3/" target="_blank">Final: The Feed ↗</a>
+      <p class="project-desc">The Feed is a simulated social media platform that censors itself as you scroll through it. Posts get blacked out. Accounts disappear. What looks like a normal feed slowly breaks apart — because that is already happening on the platforms we use every day, just quietly enough that most people don't notice. I made this because right now, social media in America is being used to control what people see and react to. Political content gets shadowbanned. Footage of government violence disappears. My own TikTok has had videos removed with no explanation. This is not a conspiracy — it is something I have experienced personally, and something that is documented and real. This project is for Americans who scroll every day without realizing their feed has already been shaped for them, and for people outside the US who don't fully understand how deep the censorship goes here. It is also for anyone who has posted something true and watched it quietly vanish. The further you scroll, the more the platform turns on you — so you can feel what most people never even realize is happening to them.</p>
     </section>
 
     <section id="exercises">
@@ -398,12 +531,12 @@
         </div>
 
         <div class="exercise-item">
-          <a href="https://editor.p5js.org/sjm/full/MXu47kQ5z" target="_blank">Exercise 3 ↗</a>
+          <a href="https://editor.p5js.org/sjm/full/MXu47kQ5z" target="_blank">Exercise 3.1 ↗</a>
           <iframe src="https://editor.p5js.org/sjm/embed/MXu47kQ5z?autoplay=1" title="Exercise 3" loading="lazy"></iframe>
         </div>
 
         <div class="exercise-item">
-          <a href="https://editor.p5js.org/sjm/full/PcA2eixI4" target="_blank">Exercise 4 ↗</a>
+          <a href="https://editor.p5js.org/sjm/full/PcA2eixI4" target="_blank">Exercise 3.2 ↗</a>
           <iframe src="https://editor.p5js.org/sjm/embed/PcA2eixI4?autoplay=1" title="Exercise 4" loading="lazy"></iframe>
         </div>
 
@@ -413,7 +546,7 @@
         </div>
 
         <div class="exercise-item">
-          <a href="https://editor.p5js.org/sjm/full/b6GZlUoSO" target="_blank">Video Game WOTM ↗</a>
+          <a href="https://editor.p5js.org/sjm/full/b6GZlUoSO" target="_blank">Exercise 4 (WOTM - Video Game) ↗</a>
           <iframe src="https://editor.p5js.org/sjm/embed/b6GZlUoSO?autoplay=1" title="Video Game WOTM" loading="lazy"></iframe>
         </div>
 
@@ -422,17 +555,91 @@
 
     <section id="vibe">
       <h2 class="section-label">Vibe Coding Experiments</h2>
+      <p class="project-desc" style="margin-bottom: 32px; max-width: 100%;">
+        Vibe coding this semester was one of the more interesting creative experiences I've had and also one of the more humbling ones. AI can generate a full interactive experience in seconds, which is wild. It's a real idea machine. But I noticed pretty quickly that if I didn't understand what the code was actually doing, I couldn't fix it when it broke, couldn't push it further, and honestly couldn't even tell if it was doing what I wanted. The tools are powerful but they don't replace knowing what you're doing. AI probably isn't going anywhere, I'm not naive about that, but the people who will actually be able to use it well are the ones who took the time to learn the fundamentals themselves. That's what this class gave me. Each week forced me to slow down, read the code, understand the logic, and make intentional creative choices rather than just prompting my way to something that looked cool. The pieces I'm most proud of are the ones where I understood every line. That's the tension vibe coding sits in, it opens doors fast, but you still have to know which room you're walking into.
+      </p>
       <div class="vibe-grid">
-        <div class="vibe-placeholder"><span>Session 1 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 2 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 3 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 4 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 5 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 6 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 7 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 8 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 9 — Coming Soon</span></div>
-        <div class="vibe-placeholder"><span>Session 10 — Coming Soon</span></div>
+
+        <!-- Session 1 — p5.js embed -->
+        <div class="vibe-item">
+          <iframe src="https://editor.p5js.org/sjm/embed/TuMiTNtAz?autoplay=1" title="Vibe Session 1" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 01</span>
+            <a href="https://editor.p5js.org/sjm/full/TuMiTNtAz" target="_blank">Generative Motion Study ↗</a>
+            <p>A p5.js sketch built in-class where mouse interaction feeds into visual emergence. Small rules compound into complex behavior — movement becomes form, form becomes rhythm.</p>
+          </div>
+        </div>
+
+        <!-- Session 2 — Flux -->
+        <div class="vibe-item">
+          <iframe src="./vibe_codes/flux.html" title="Flux" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 02</span>
+            <a href="./vibe_codes/flux.html" target="_blank">Flux ↗</a>
+            <p>Inspired by Frank Chimero's concept of "flux," this piece treats screens as time-based phenomena. The work unfolds slowly — screens are experienced across duration, not all at once.</p>
+          </div>
+        </div>
+
+        <!-- Session 3 — Scrolling Self -->
+        <div class="vibe-item">
+          <iframe src="./vibe_codes/scrolling-self.html" title="Scrolling Self" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 03</span>
+            <a href="./vibe_codes/scrolling-self.html" target="_blank">Scrolling Self ↗</a>
+            <p>Type whatever you think and watch the site visually respond. Inspired by Laurel Schwulst's idea of websites as living, shifting spaces — digital systems shape and reflect identity.</p>
+          </div>
+        </div>
+
+        <!-- Session 4 — Everyone Watches, Nobody Sees -->
+        <div class="vibe-item">
+          <iframe src="./vibe_codes/everyone-watches.html" title="Everyone Watches, Nobody Sees" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 04</span>
+            <a href="./vibe_codes/everyone-watches.html" target="_blank">Everyone Watches, Nobody Sees ↗</a>
+            <p>Thirty-six illustrated Black women flicker in and out of visibility across a dark grid — watched but unseen. Hovering restores each face fully. Inspired by Sydette Harry.</p>
+          </div>
+        </div>
+
+        <!-- Session 5 — Soft Archive -->
+        <div class="vibe-item">
+          <iframe src="./vibe_codes/soft-archive.html" title="Soft Archive" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 05</span>
+            <a href="./vibe_codes/soft-archive.html" target="_blank">Soft Archive ↗</a>
+            <p>An interactive space that responds to how gently you move. The slower your cursor, the more visible the text becomes. Inspired by Chia Amisola's tender digital environments.</p>
+          </div>
+        </div>
+
+        <!-- Session 6 — Soft Care -->
+        <div class="vibe-item">
+          <iframe src="./vibe_codes/soft-care-index.html" title="Soft Care" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 06</span>
+            <a href="./vibe_codes/soft-care-index.html" target="_blank">Soft Care ↗</a>
+            <p>A filterable archive of documented creative practices organized across eight categories — mapping the breadth of artistic methodology in one animated, living document.</p>
+          </div>
+        </div>
+
+        <!-- Session 7 — The Archive -->
+        <div class="vibe-item">
+          <iframe src="./vibe_codes/thearchive.html" title="The Archive" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 07</span>
+            <a href="./vibe_codes/thearchive.html" target="_blank">The Archive ↗</a>
+            <p>A generative experiment born from a single in-class vibe coding session. The constraints were tight, the result was unexpected — a piece that surprised even its maker.</p>
+          </div>
+        </div>
+
+        <!-- Session 8 — Chroma Keys -->
+        <div class="vibe-item">
+          <iframe src="./vibe_codes/chromakeys.html" title="Chroma Keys" loading="lazy"></iframe>
+          <div class="vibe-item-meta">
+            <span class="vibe-session">Session 08</span>
+            <a href="./vibe_codes/chromakeys.html" target="_blank">Chroma Keys ↗</a>
+            <p>A vibe coding experiment exploring color, keys, and visual interaction — built in a single in-class session.</p>
+          </div>
+        </div>
+
       </div>
     </section>
 
